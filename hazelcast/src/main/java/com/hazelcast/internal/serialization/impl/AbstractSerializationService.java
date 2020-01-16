@@ -36,6 +36,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.Serializer;
+import com.hazelcast.projectx.transportable.Transportable;
 
 import java.io.Externalizable;
 import java.io.Serializable;
@@ -68,6 +69,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
     protected SerializerAdapter dataSerializerAdapter;
     protected SerializerAdapter portableSerializerAdapter;
+    protected SerializerAdapter transportableSerializerAdapter;
     protected final SerializerAdapter nullSerializerAdapter;
     protected SerializerAdapter javaSerializerAdapter;
     protected SerializerAdapter javaExternalizableAdapter;
@@ -496,6 +498,9 @@ public abstract class AbstractSerializationService implements InternalSerializat
         }
         if (Portable.class.isAssignableFrom(type)) {
             return portableSerializerAdapter;
+        }
+        if (Transportable.class.isAssignableFrom(type)) {
+            return transportableSerializerAdapter;
         }
         return constantTypesMap.get(type);
     }

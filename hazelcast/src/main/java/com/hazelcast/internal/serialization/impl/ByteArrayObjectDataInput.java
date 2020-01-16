@@ -34,7 +34,7 @@ import static com.hazelcast.internal.nio.Bits.SHORT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.UTF_8;
 import static com.hazelcast.version.Version.UNKNOWN;
 
-class ByteArrayObjectDataInput extends VersionedObjectDataInput implements BufferObjectDataInput {
+public class ByteArrayObjectDataInput extends VersionedObjectDataInput implements BufferObjectDataInput {
 
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
@@ -47,11 +47,11 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     private final InternalSerializationService service;
     private final boolean bigEndian;
 
-    ByteArrayObjectDataInput(byte[] data, InternalSerializationService service, ByteOrder byteOrder) {
+    public ByteArrayObjectDataInput(byte[] data, InternalSerializationService service, ByteOrder byteOrder) {
         this(data, 0, service, byteOrder);
     }
 
-    ByteArrayObjectDataInput(byte[] data, int offset, InternalSerializationService service, ByteOrder byteOrder) {
+    public ByteArrayObjectDataInput(byte[] data, int offset, InternalSerializationService service, ByteOrder byteOrder) {
         this.data = data;
         this.size = data != null ? data.length : 0;
         this.pos = offset;

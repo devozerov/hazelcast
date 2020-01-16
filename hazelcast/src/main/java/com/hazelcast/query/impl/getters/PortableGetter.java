@@ -24,17 +24,17 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.PortableReader;
 
-final class PortableGetter extends Getter {
+public final class PortableGetter extends Getter {
 
     private final InternalSerializationService serializationService;
 
-    PortableGetter(InternalSerializationService serializationService) {
+    public PortableGetter(InternalSerializationService serializationService) {
         super(null);
         this.serializationService = serializationService;
     }
 
     @Override
-    Object getValue(Object target, String fieldPath) throws Exception {
+    public Object getValue(Object target, String fieldPath) throws Exception {
         Data data = (Data) target;
         PortableContext context = serializationService.getPortableContext();
         PortableReader reader = serializationService.createPortableReader(data);

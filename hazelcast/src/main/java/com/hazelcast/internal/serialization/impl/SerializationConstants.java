@@ -25,6 +25,8 @@ public final class SerializationConstants {
 
     public static final int CONSTANT_TYPE_PORTABLE = -1;
 
+    public static final int CONSTANT_TYPE_TRANSPORTABLE = -55;
+
     public static final int CONSTANT_TYPE_DATA_SERIALIZABLE = -2;
 
     public static final int CONSTANT_TYPE_BYTE = -3;
@@ -128,7 +130,7 @@ public final class SerializationConstants {
     public static final int JAVA_DEFAULT_TYPE_PRIORITY_QUEUE = -49;
 
     // NUMBER OF CONSTANT SERIALIZERS...
-    public static final int CONSTANT_SERIALIZERS_LENGTH = 50;
+    public static final int CONSTANT_SERIALIZERS_LENGTH = 100;
 
     public static final int JAVA_DEFAULT_TYPE_ENUM = -50;
 

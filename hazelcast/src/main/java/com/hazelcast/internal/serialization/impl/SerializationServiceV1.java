@@ -36,6 +36,8 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.partition.PartitioningStrategy;
+import com.hazelcast.projectx.transportable.Transportable;
+import com.hazelcast.projectx.transportable.TransportableSerializer;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -107,6 +109,11 @@ public class SerializationServiceV1 extends AbstractSerializationService {
 
     private final PortableContextImpl portableContext;
     private final PortableSerializer portableSerializer;
+    private final TransportableSerializer transportableSerializer;
+
+    public TransportableSerializer getTransportableSerializer() {
+        return transportableSerializer;
+    }
 
     SerializationServiceV1(AbstractBuilder<?> builder) {
         super(builder);
@@ -120,6 +127,9 @@ public class SerializationServiceV1 extends AbstractSerializationService {
                 new DataSerializableSerializer(builder.dataSerializableFactories, builder.getClassLoader()), this);
         portableSerializer = new PortableSerializer(portableContext, loader.getFactories());
         portableSerializerAdapter = createSerializerAdapter(portableSerializer, this);
+
+        transportableSerializer = new TransportableSerializer();
+        transportableSerializerAdapter = createSerializerAdapter(transportableSerializer, this);
 
         javaSerializerAdapter = createSerializerAdapter(
                 new JavaSerializer(builder.enableSharedObject, builder.enableCompression, builder.classNameFilter), this);
@@ -169,6 +179,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         registerConstant(null, nullSerializerAdapter);
         registerConstant(DataSerializable.class, dataSerializerAdapter);
         registerConstant(Portable.class, portableSerializerAdapter);
+        registerConstant(Transportable.class, transportableSerializerAdapter);
         //primitives and String
         registerConstant(Byte.class, new ByteSerializer());
         registerConstant(Boolean.class, new BooleanSerializer());

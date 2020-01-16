@@ -34,7 +34,7 @@ import static com.hazelcast.internal.nio.Bits.SHORT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.UTF_8;
 import static com.hazelcast.version.Version.UNKNOWN;
 
-class ByteArrayObjectDataOutput extends VersionedObjectDataOutput implements BufferObjectDataOutput {
+public class ByteArrayObjectDataOutput extends VersionedObjectDataOutput implements BufferObjectDataOutput {
 
     final int initialSize;
 

@@ -22,6 +22,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.projectx.transportable.Transportable;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.query.impl.DefaultArgumentParser;
@@ -100,9 +101,15 @@ public final class Extractors {
                 return targetData;
             }
         }
+        if (target instanceof Transportable) {
+            targetData = ss.toData(target);
+            if (targetData.isTransportable()) {
+                return targetData;
+            }
+        }
         if (target instanceof Data) {
             targetData = (Data) target;
-            if (targetData.isPortable() || targetData.isJson()) {
+            if (targetData.isPortable() || targetData.isTransportable() || targetData.isJson()) {
                 return targetData;
             } else {
                 // convert non-portable Data to object
@@ -138,7 +145,7 @@ public final class Extractors {
                         genericPortableGetter = new PortableGetter(ss);
                     }
                     return genericPortableGetter;
-                } else if (((Data) targetObject).isPortable()) {
+                } else if (((Data) targetObject).isTransportable()) {
                     if (genericTransortableGetter == null) {
                         // will be initialised a couple of times in the worst case
                         genericTransortableGetter = new TransportableGetter(ss);

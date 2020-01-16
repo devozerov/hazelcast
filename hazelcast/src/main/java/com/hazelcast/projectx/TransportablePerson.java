@@ -1,4 +1,6 @@
-package com.hazelcast.projectx.transportable;
+package com.hazelcast.projectx;
+
+import com.hazelcast.projectx.transportable.Transportable;
 
 import java.util.Objects;
 

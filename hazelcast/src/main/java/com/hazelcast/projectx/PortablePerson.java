@@ -1,4 +1,4 @@
-package com.hazelcast.projectx.portable;
+package com.hazelcast.projectx;
 
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;

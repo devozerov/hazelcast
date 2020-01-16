@@ -141,7 +141,7 @@ public class LazyMapEntry<K, V> extends CachedQueryEntry<K, V>
 
     @Override
     public String toString() {
-        return getKey() + "=" + getValue();
+        return "E";
     }
 
     @SuppressWarnings("unchecked")

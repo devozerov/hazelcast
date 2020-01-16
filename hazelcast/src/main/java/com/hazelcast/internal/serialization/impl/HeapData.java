@@ -163,6 +163,11 @@ public class HeapData implements Data {
     }
 
     @Override
+    public boolean isTransportable() {
+        return SerializationConstants.CONSTANT_TYPE_TRANSPORTABLE == getType();
+    }
+
+    @Override
     public boolean isJson() {
         return SerializationConstants.JAVASCRIPT_JSON_SERIALIZATION_TYPE == getType();
     }

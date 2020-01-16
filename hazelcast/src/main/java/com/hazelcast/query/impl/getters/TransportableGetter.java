@@ -3,6 +3,7 @@ package com.hazelcast.query.impl.getters;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.ByteArrayObjectDataInput;
 import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.internal.serialization.impl.SerializationServiceV1;
 import com.hazelcast.projectx.transportable.TransportableSerializer;
 
 import java.nio.ByteOrder;
@@ -11,11 +12,11 @@ public class TransportableGetter extends Getter {
     private final InternalSerializationService ss;
     private final TransportableSerializer serializer;
 
-    public TransportableGetter(InternalSerializationService ss, TransportableSerializer serializer) {
+    public TransportableGetter(InternalSerializationService ss) {
         super(null);
 
         this.ss = ss;
-        this.serializer = serializer;
+        this.serializer = ((SerializationServiceV1)ss).getTransportableSerializer();
     }
 
     @Override

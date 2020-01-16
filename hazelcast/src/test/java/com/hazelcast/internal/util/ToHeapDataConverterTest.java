@@ -102,6 +102,11 @@ public class ToHeapDataConverterTest {
         }
 
         @Override
+        public boolean isTransportable() {
+            return false;
+        }
+
+        @Override
         public boolean isJson() {
             return false;
         }

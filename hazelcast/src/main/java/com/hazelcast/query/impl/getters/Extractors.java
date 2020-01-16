@@ -43,6 +43,7 @@ public final class Extractors {
     private static final float EVICTION_PERCENTAGE = 0.2f;
 
     private volatile PortableGetter genericPortableGetter;
+    private volatile TransportableGetter genericTransortableGetter;
     private volatile JsonDataGetter jsonDataGetter;
 
     /**
@@ -137,6 +138,12 @@ public final class Extractors {
                         genericPortableGetter = new PortableGetter(ss);
                     }
                     return genericPortableGetter;
+                } else if (((Data) targetObject).isPortable()) {
+                    if (genericTransortableGetter == null) {
+                        // will be initialised a couple of times in the worst case
+                        genericTransortableGetter = new TransportableGetter(ss);
+                    }
+                    return genericTransortableGetter;
                 } else if (((Data) targetObject).isJson()) {
                     if (jsonDataGetter == null) {
                         // will be initialised a couple of times in the worst case

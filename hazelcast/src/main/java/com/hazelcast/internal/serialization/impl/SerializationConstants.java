@@ -25,7 +25,7 @@ public final class SerializationConstants {
 
     public static final int CONSTANT_TYPE_PORTABLE = -1;
 
-    public static final int CONSTANT_TYPE_TRANSPORTABLE = -55;
+    public static final int CONSTANT_TYPE_TRANSPORTABLE = -54;
 
     public static final int CONSTANT_TYPE_DATA_SERIALIZABLE = -2;
 

@@ -114,6 +114,8 @@ public interface Data {
      */
     boolean isPortable();
 
+    boolean isTransportable();
+
     /**
      * Returns true if this Data is created from a {@link com.hazelcast.core.HazelcastJsonValue} object,
      * false otherwise

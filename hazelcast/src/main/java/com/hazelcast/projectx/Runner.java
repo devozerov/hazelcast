@@ -7,13 +7,15 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.SerializationServiceV1;
+import com.hazelcast.map.IMap;
 import com.hazelcast.projectx.portable.Factory;
 import com.hazelcast.projectx.portable.PortablePerson;
 import com.hazelcast.projectx.transportable.TransportablePerson;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.getters.PortableGetter;
 import com.hazelcast.query.impl.getters.TransportableGetter;
 
+import java.util.Collection;
 import java.util.Collections;
 
 public class Runner {
@@ -33,9 +35,21 @@ public class Runner {
 
             doPortable(ss);
             doTransportable(ss);
+
+            doTransportableQuery(instance);
         } finally {
             instance.shutdown();
         }
+    }
+
+    private static void doTransportableQuery(HazelcastInstance instance) {
+        IMap<Long, TransportablePerson> map = instance.getMap("tp");
+
+        map.put(1L, new TransportablePerson(1L, 1L, "Hazel", "Cast"));
+
+        Collection<TransportablePerson> persons = map.values(Predicates.equal("firstName", "Hazel"));
+
+        System.out.println(">>> QUERY: " + persons);
     }
 
     private static void doPortable(InternalSerializationService ss) throws Exception {
@@ -59,10 +73,7 @@ public class Runner {
         TransportablePerson personRestored = ss.toObject(data);
         System.out.println(">>> Restored (deser) : " + personRestored);
 
-        TransportableGetter portableGetter = new TransportableGetter(
-            ss,
-            ((SerializationServiceV1)ss).getTransportableSerializer()
-        );
+        TransportableGetter portableGetter = new TransportableGetter(ss);
 
         long id = (long)portableGetter.getValue(data, "id");
         long departmentId = (long)portableGetter.getValue(data, "departmentId");

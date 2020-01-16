@@ -8,7 +8,7 @@ public class JmhRunner {
     public static void main(String[] args) throws Exception {
 
         Options opt = new OptionsBuilder()
-            .include(SerializationBenchmark.class.getSimpleName())
+            .include(SerializeBenchmark.class.getSimpleName())
             .forks(1)
             .build();
 

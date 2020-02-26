@@ -36,10 +36,7 @@ import java.util.UUID;
 /**
  * Operation which is broadcast to participating members to start query execution.
  */
-public class QueryExecuteOperation extends QueryOperation {
-    /** Unique query ID. */
-    private QueryId queryId;
-
+public class QueryExecuteOperation extends QueryIdAwareOperation {
     /** Mapped ownership of partitions. */
     private Map<UUID, PartitionIdSet> partitionMapping;
 
@@ -52,11 +49,14 @@ public class QueryExecuteOperation extends QueryOperation {
     /** Inbound edge mapping (from edge ID to owning fragment position). */
     private Map<Integer, Integer> inboundEdgeMap;
 
+    /** Map from edge ID to initial credits assigned to senders. */
+    private Map<Integer, Long> edgeCreditMap;
+
     /** Arguments. */
     private List<Object> arguments;
 
-    /** Offset which defines which data thread will be used for fragments. */
-    private int baseDeploymentOffset;
+    /** Timeout. */
+    private long timeout;
 
     /** Root fragment result consumer. Applicable only to root fragment being executed on local node. */
     private transient QueryResultConsumer rootConsumer;
@@ -66,25 +66,26 @@ public class QueryExecuteOperation extends QueryOperation {
     }
 
     public QueryExecuteOperation(
+        long epochWatermark,
         QueryId queryId,
         Map<UUID, PartitionIdSet> partitionMapping,
         List<QueryFragmentDescriptor> fragmentDescriptors,
         Map<Integer, Integer> outboundEdgeMap,
         Map<Integer, Integer> inboundEdgeMap,
+        Map<Integer, Long> edgeCreditMap,
         List<Object> arguments,
-        int baseDeploymentOffset
+        long timeout
     ) {
+        super(epochWatermark, queryId);
+
         this.queryId = queryId;
         this.partitionMapping = partitionMapping;
         this.fragmentDescriptors = fragmentDescriptors;
         this.outboundEdgeMap = outboundEdgeMap;
         this.inboundEdgeMap = inboundEdgeMap;
+        this.edgeCreditMap = edgeCreditMap;
         this.arguments = arguments;
-        this.baseDeploymentOffset = baseDeploymentOffset;
-    }
-
-    public QueryId getQueryId() {
-        return queryId;
+        this.timeout = timeout;
     }
 
     public Map<UUID, PartitionIdSet> getPartitionMapping() {
@@ -103,12 +104,16 @@ public class QueryExecuteOperation extends QueryOperation {
         return inboundEdgeMap;
     }
 
+    public Map<Integer, Long> getEdgeCreditMap() {
+        return edgeCreditMap;
+    }
+
     public List<Object> getArguments() {
         return arguments;
     }
 
-    public int getBaseDeploymentOffset() {
-        return baseDeploymentOffset;
+    public long getTimeout() {
+        return timeout;
     }
 
     public QueryResultConsumer getRootConsumer() {
@@ -122,12 +127,7 @@ public class QueryExecuteOperation extends QueryOperation {
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-
-        // Write query ID.
-        queryId.writeData(out);
-
+    protected void writeInternal1(ObjectDataOutput out) throws IOException {
         // Write partitions.
         out.writeInt(partitionMapping.size());
 
@@ -158,6 +158,13 @@ public class QueryExecuteOperation extends QueryOperation {
             out.writeInt(entry.getValue());
         }
 
+        out.writeInt(edgeCreditMap.size());
+
+        for (Map.Entry<Integer, Long> entry : edgeCreditMap.entrySet()) {
+            out.writeInt(entry.getKey());
+            out.writeLong(entry.getValue());
+        }
+
         // Write arguments.
         if (arguments == null) {
             out.writeInt(0);
@@ -169,18 +176,12 @@ public class QueryExecuteOperation extends QueryOperation {
             }
         }
 
-        // Write deployment offset.
-        out.writeInt(baseDeploymentOffset);
+        // Write timeout.
+        out.writeLong(timeout);
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-
-        // Read query ID.
-        queryId = new QueryId();
-        queryId.readData(in);
-
+    protected void readInternal1(ObjectDataInput in) throws IOException {
         // Read partitions.
         int partitionMappingCnt = in.readInt();
 
@@ -219,6 +220,14 @@ public class QueryExecuteOperation extends QueryOperation {
             inboundEdgeMap.put(in.readInt(), in.readInt());
         }
 
+        int edgeCreditMapSize = in.readInt();
+
+        edgeCreditMap = new HashMap<>(edgeCreditMapSize);
+
+        for (int i = 0; i < edgeCreditMapSize; i++) {
+            edgeCreditMap.put(in.readInt(), in.readLong());
+        }
+
         // Read arguments.
         int argumentCnt = in.readInt();
 
@@ -232,7 +241,7 @@ public class QueryExecuteOperation extends QueryOperation {
             }
         }
 
-        // Read deployment offset.
-        baseDeploymentOffset = in.readInt();
+        // Read timeout.
+        timeout = in.readLong();
     }
 }

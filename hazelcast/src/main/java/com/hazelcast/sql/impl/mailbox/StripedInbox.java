@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.mailbox;
 
 import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.SqlServiceImpl;
 
 import java.util.ArrayDeque;
 import java.util.Collection;
@@ -34,8 +35,15 @@ public class StripedInbox extends AbstractInbox {
     private final ArrayDeque<SendBatch>[] queues;
 
     @SuppressWarnings("unchecked")
-    public StripedInbox(QueryId queryId, int edgeId, Collection<UUID> senderMemberIds) {
-        super(queryId, edgeId, senderMemberIds.size());
+    public StripedInbox(
+        QueryId queryId,
+        int edgeId,
+        int rowWidth,
+        SqlServiceImpl service,
+        Collection<UUID> senderMemberIds,
+        long maxMemory
+    ) {
+        super(queryId, edgeId, rowWidth, service, senderMemberIds.size(), maxMemory);
 
         // Build inverse map from the member to it's index.
         int memberIdx = 0;
@@ -50,13 +58,13 @@ public class StripedInbox extends AbstractInbox {
         queues = new ArrayDeque[memberIdx];
 
         for (int i = 0; i < memberIdx; i++) {
-            queues[i] = new ArrayDeque<>(1);
+            queues[i] = new ArrayDeque<>(INITIAL_QUEUE_SIZE);
         }
     }
 
     @Override
-    public void onBatch0(UUID sourceMemberId, SendBatch batch) {
-        int idx = memberToIdxMap.get(sourceMemberId);
+    public void onBatchReceived0(SendBatch batch) {
+        int idx = memberToIdxMap.get(batch.getSenderId());
 
         ArrayDeque<SendBatch> queue = queues[idx];
 
@@ -68,7 +76,11 @@ public class StripedInbox extends AbstractInbox {
     }
 
     public SendBatch poll(int stripe) {
-        return queues[stripe].poll();
+        SendBatch batch = queues[stripe].poll();
+
+        onBatchPolled(batch);
+
+        return batch;
     }
 
     @Override

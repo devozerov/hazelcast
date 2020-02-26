@@ -46,7 +46,7 @@ public class ReceiveExec extends AbstractExec {
     }
 
     @Override
-    public IterationResult advance() {
+    public IterationResult advance0() {
         if (inboxDone) {
             throw new IllegalStateException("Should not be called.");
         }
@@ -66,6 +66,8 @@ public class ReceiveExec extends AbstractExec {
 
             return IterationResult.FETCHED_DONE;
         } else {
+            inbox.sendFlowControl();
+
             return IterationResult.FETCHED;
         }
     }

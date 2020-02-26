@@ -149,6 +149,21 @@ public class TpcHTest extends SqlTestSupport {
         String type = "BRASS";
         String region = "EUROPE";
 
+        // TODO: NLJ is generate at the moment because join order is [part, supplier, ...] and there is no condition
+        //  between them, hence we treat the relation as cross-join.
+
+        // TODO: Notice broadcasts in the plan. This is because we do not have a cost model for exchanges yet, so the
+        //  planner doesn't know what to pick.
+
+        // TODO: Another problem is that (RANDOM, PARTITIONED) join pair does have a strategy to produce (UNICAST, UNICAST).
+        //  It only produces (UNICAST, NONE) AND (NONE, BROADCAST)
+
+        // TODO: If you look carefully at the top project, you will see that there are a number of redundant fields.
+        //  Specifically: 1, 2 (part); 4, 5 (supplier); 11, 12 (partsupp); 14, 15 (nation); 17, 18 (region)
+        //  The reason for this is that we cannot pushdown the filter past join. We do have ProjectJoinTransposeRule,
+        //  but it seems that it is not fired properly!? Perhaps we need to add project to Join, the same way we did
+        //  that for scan?
+
         List<SqlRow> rows = execute(
             "select\n" +
                 "    s.s_acctbal,\n" +
@@ -874,10 +889,10 @@ public class TpcHTest extends SqlTestSupport {
         OptimizerContext.setOptimizerConfig(OptimizerConfig.builder().setStatisticsEnabled(true).build());
 
         SqlCursorImpl res = (SqlCursorImpl) member.getSqlService().query(sql, args);
-        QueryPlan plan = res.getHandle().getPlan();
+        QueryPlan plan = res.getPlan();
 
         System.out.println(">>> Explain:");
-        for (SqlRow explainRow : res.getHandle().getPlan().getExplain().asCursor()) {
+        for (SqlRow explainRow : res.getPlan().getExplain().asRows()) {
             System.out.println("\t" + explainRow.getColumn(0));
         }
         System.out.println();

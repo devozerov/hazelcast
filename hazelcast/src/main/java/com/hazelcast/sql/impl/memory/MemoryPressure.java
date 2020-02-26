@@ -14,22 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.worker.task;
-
-import com.hazelcast.sql.impl.exec.RootExec;
+package com.hazelcast.sql.impl.memory;
 
 /**
- * The task to get more results from the root executor. Submitted from user thread.
+ * Estimated memory pressure which system experiences at the moment.
  */
-public class AdvanceRootQueryTask implements QueryTask {
-    /** Root executor. */
-    private final RootExec rootExec;
-
-    public AdvanceRootQueryTask(RootExec rootExec) {
-        this.rootExec = rootExec;
-    }
-
-    public RootExec getRootExec() {
-        return rootExec;
-    }
+public enum MemoryPressure {
+    HIGH, MEDIUM, LOW
 }

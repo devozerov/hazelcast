@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.exec;
 
-import com.hazelcast.sql.impl.QueryContext;
+import com.hazelcast.sql.impl.QueryFragmentContext;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;
@@ -91,12 +91,20 @@ public class UpstreamState implements Iterable<Row> {
         }
     }
 
-    public void setup(QueryContext ctx) {
+    public void setup(QueryFragmentContext ctx) {
         upstream.setup(ctx);
     }
 
-    public RowBatch getCurrentBatch() {
-        return currentBatch;
+    public RowBatch consumeBatch() {
+        if (currentBatchPos != 0) {
+            throw new IllegalStateException("Batch can be consumed only as a whole.");
+        }
+
+        RowBatch batch = currentBatch;
+
+        currentBatchPos = batch.getRows().size();
+
+        return batch;
     }
 
     /**

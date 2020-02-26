@@ -14,19 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql;
+package usercodedeployment;
 
-/**
- * SQL exception throw in situation when query attempt might be retried immediately without any corrective actions.
- */
-public class HazelcastSqlTransientException extends HazelcastSqlException {
-    private static final long serialVersionUID = -2789247171606457719L;
+import java.io.Serializable;
 
-    public HazelcastSqlTransientException(int code, String message) {
-        super(code, message);
-    }
+public class SampleBaseClass implements Serializable, Runnable {
+    @Override
+    public void run() {
 
-    public HazelcastSqlTransientException(int code, String message, Throwable cause) {
-        super(code, message, cause);
     }
 }

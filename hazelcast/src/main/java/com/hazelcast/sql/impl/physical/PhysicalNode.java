@@ -35,12 +35,10 @@ public interface PhysicalNode extends DataSerializable {
      */
     void visit(PhysicalNodeVisitor visitor);
 
-    // TODO: Remove and use physical plan.
-    int getInputCount();
-    PhysicalNode getInput(int i);
-    default PhysicalNode getInput() {
-        return getInput(0);
-    }
-
+    /**
+     * Get schema associated with the node.
+     *
+     * @return Schema.
+     */
     PhysicalNodeSchema getSchema();
 }

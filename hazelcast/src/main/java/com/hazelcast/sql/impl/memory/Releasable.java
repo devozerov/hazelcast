@@ -14,16 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.worker.task;
+package com.hazelcast.sql.impl.memory;
 
 /**
- * Task to stop a worker.
+ * Task which may release some memory if asked to.
  */
-public final class StopQueryTask implements QueryTask {
-    /** Singleton instance. */
-    public static final StopQueryTask INSTANCE = new StopQueryTask();
-
-    private StopQueryTask() {
-        // No-op.
-    }
+public interface Releasable {
+    int tryRelease(long size);
 }

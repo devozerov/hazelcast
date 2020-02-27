@@ -27,7 +27,8 @@ import org.apache.calcite.rel.RelWriter;
 import java.util.List;
 
 /**
- * Exchange which marge sorted input streams from several nodes into a a single sorted stream on a single node.
+ * Exchange which merge-sorts input streams from several nodes into a a single
+ * sorted stream on a single node.
  * <p>
  * Traits:
  * <ul>

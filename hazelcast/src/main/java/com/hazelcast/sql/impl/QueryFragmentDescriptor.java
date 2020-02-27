@@ -35,7 +35,7 @@ public class QueryFragmentDescriptor implements DataSerializable {
     private PhysicalNode node;
 
     /** IDs of mapped nodes. */
-    // TODO: This collection may take big size when sent over a wire. Try to avoid it's serialization.
+    // TODO: This collection may take big size when sent over a wire. Try to avoid its serialization.
     private Collection<UUID> mappedMemberIds;
 
     public QueryFragmentDescriptor() {

@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Single query fragment. Represents a node to be executed, it's inbound and outbound edges, members where it is
+ * Single query fragment. Represents a node to be executed, its inbound and outbound edges, members where it is
  * to be executed.
  */
 public class QueryFragment {

@@ -91,7 +91,7 @@ public interface ObjectDataOutput extends DataOutput, VersionAware, WanProtocolV
     byte[] toByteArray();
 
     /**
-     * @param padding padding bytes at the beginning of the byte-array.
+     * @param padding padding bytes at the beginning of the byte array.
      * @return copy of internal byte array
      */
     byte[] toByteArray(int padding);

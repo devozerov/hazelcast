@@ -21,8 +21,8 @@ In this section, we summarize the fundamental principles that influence the prot
 
 Hazelcast Mustang is a modern distributed SQL engine that targets the OLTP workloads for in-memory data. We expect
 that the engine will be used mostly for relatively short queries, taking milliseconds or seconds to complete. Because network
-latency is still relatively as of 2020, the protocol should be designed to minimize the number of blocking network calls,
-when one member waits for the other.
+latency is still relatively high as of 2020, the protocol should be designed to minimize the number of blocking network calls
+when one member waits for another.
 
 ### 1.2 Fail-Fast
 
@@ -36,8 +36,8 @@ appropriate choice.
 
 While the idea of hiding intermittent failures from users is compelling from the usability point of view, it comes at a massive
 engineering cost, as mentioned by Google Spanner engineers. The Hazelcast Mustang engine is designed with the **fail-fast**
-behavior in mind: whenever a failure occurs, the query is terminated, and a proper transient error is delivered to the user.
-The user should restart the query manually then. The query will fail in the following scenarios:
+behavior in mind: whenever a failure occurs, the query is terminated and a proper transient error is delivered to the user.
+The user should then restart the query manually. The query will fail in the following scenarios:
 1. Member executing the query (participant) has left the cluster
 1. Temporal network problem between two members which resulted in a broken TCP connection
 
@@ -62,7 +62,7 @@ reducing performance dramatically, which makes such design inappropriate for us.
 ## 2 Existing Infrastructure
 
 The Hazelcast Mustang engine is a part of the Hazelcast IMDG product, which is a distributed system with its own networking
-infrastructure built on top of TCP/IP protocol. In this section, we discuss the key networking abstractions used Hazelcast IMDG.
+infrastructure built on top of TCP/IP protocol. In this section, we discuss the key networking abstractions used in Hazelcast IMDG.
 which are `Packet`, `Connection` and `Operation`. We then analyze how they are used in Hazelcast Mustang.
 
 ### 2.1 Packet
@@ -95,7 +95,7 @@ Hazelcast Jet relies on these guarantees.
 Most Hazelcast components don't operate on packets directly. Instead, the `Operation` abstraction is used, which encapsulates
 the message and additional information such as the caller ID, timeouts, retries, etc.
 
-Operations are submitted to the `OperationService` which obtains the connection, serializes operations to packets, and manage
+Operations are submitted to the `OperationService` which obtains the connection, serializes operations to packets, and manages
 completion futures, timeouts, and retries.
 
 ### 2.4 Discussion
@@ -106,7 +106,7 @@ exchange. Second, due to fail-fast design choice, the engine doesn't need to kee
 from the receiver. The fire-and-forget approach is used instead. Last, since `Operation` and `OperationService` interfaces do
 not guarantee that the same `Connection` object will be used between invocations, the ordering requirement cannot be satisfied.
 
-Instead, `Packet` and `Connection` interfaces are used directly. For every stream of data, we obtain the `Connection` object
+Instead, `Packet` and `Connection` interfaces are used directly. For every stream of data we obtain the `Connection` object
 from the connection manager. This object is used for the duration of query for the given stream, thus ensuring the ordering of
 data delivery.
 

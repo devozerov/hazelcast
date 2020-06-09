@@ -16,7 +16,8 @@
 
 package com.hazelcast.metadata;
 
-import java.util.Collection;
+import java.util.Map;
+import java.util.function.Predicate;
 
 /**
  * Metadata service, AP or CP.
@@ -28,14 +29,15 @@ public interface MetadataService {
      * @param key Key.
      * @return Value or {@code null}
      */
-    MetadataValue get(MetadataKey key);
+    Object get(Object key);
 
     /**
-     * Get all metadata entries.
+     * Get objects matching the passed filter.
      *
-     * @return Entries.
+     * @param filter Filter applied to keys.
+     * @return Objects that pass the filter.
      */
-    Collection<MetadataValue> getAll();
+    Map<Object, Object> getWithFilter(Predicate<Object> filter);
 
     /**
      * Create the metadata entry.
@@ -45,7 +47,7 @@ public interface MetadataService {
      * @param ifNotExists If {@code true} then the command will be ignored if another entry with the given key already exists,
      *                    if {@code false} an exception will be thrown.
      */
-    void create(MetadataKey key, MetadataValue value, boolean ifNotExists);
+    void create(Object key, Object value, boolean ifNotExists);
 
     /**
      * Drop the metadata entry.
@@ -54,7 +56,5 @@ public interface MetadataService {
      * @param isExists If {@code true} then the command will be ignored if an entry with the given key doens't exist,
      *                 if {@code false} an exception will be thrown.
      */
-    void drop(MetadataKey key, boolean isExists);
-
-
+    void drop(Object key, boolean isExists);
 }

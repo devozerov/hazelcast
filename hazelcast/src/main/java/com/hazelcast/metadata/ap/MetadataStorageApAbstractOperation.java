@@ -18,9 +18,9 @@ package com.hazelcast.metadata.ap;
 
 import com.hazelcast.spi.impl.operationservice.Operation;
 
-public class AbstractApMetadataOperation extends Operation {
+public class MetadataStorageApAbstractOperation extends Operation {
     @Override
     public String getServiceName() {
-        return ApMetadataStorage.SERVICE_NAME;
+        return MetadataStorageAp.SERVICE_NAME;
     }
 }

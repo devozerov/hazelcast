@@ -16,53 +16,43 @@
 
 package com.hazelcast.metadata.ap;
 
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
+import java.util.Map;
 
-public class ApMetadataUpdateOperation extends AbstractApMetadataOperation {
-    /** Metadata key. */
-    private Object key;
+public class MetadataStorageApPreJoinOperation extends MetadataStorageApUpdateOperation {
 
-    /** Value to be set (null for drop). */
-    private Object value;
+    private Map<Object, Object> entries;
 
-    /** {@code true} if the operation should be ignored in case of existence conflict. */
-    private boolean ignoreOnExistenceConflict;
-
-    public ApMetadataUpdateOperation() {
+    public MetadataStorageApPreJoinOperation() {
         // No-op.
     }
 
-    public ApMetadataUpdateOperation(Object key, Object value, boolean ignoreOnExistenceConflict) {
-        this.key = key;
-        this.value = value;
-        this.ignoreOnExistenceConflict = ignoreOnExistenceConflict;
+    public MetadataStorageApPreJoinOperation(Map<Object, Object> entries) {
+        this.entries = entries;
     }
 
     @Override
     public void run() throws Exception {
-        ApMetadataStorage storage = getService();
+        MetadataStorageAp storage = getService();
 
-        storage.updateLocally(key, value, ignoreOnExistenceConflict);
+        storage.addEntriesLocally(entries);
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
 
-        out.writeObject(key);
-        out.writeObject(value);
-        out.writeBoolean(ignoreOnExistenceConflict);
+        SerializationUtil.writeMap(entries, out);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
 
-        key = in.readObject();
-        value = in.readObject();
-        ignoreOnExistenceConflict = in.readBoolean();
+        entries = SerializationUtil.readMap(in);
     }
 }

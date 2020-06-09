@@ -16,43 +16,53 @@
 
 package com.hazelcast.metadata.ap;
 
-import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
-import java.util.Map;
 
-public class ApMetadataPreJoinOperation extends ApMetadataUpdateOperation {
+public class MetadataStorageApUpdateOperation extends MetadataStorageApAbstractOperation {
+    /** Metadata key. */
+    private Object key;
 
-    private Map<Object, Object> entries;
+    /** Value to be set (null for drop). */
+    private Object value;
 
-    public ApMetadataPreJoinOperation() {
+    /** {@code true} if the operation should be ignored in case of existence conflict. */
+    private boolean ignoreOnExistenceConflict;
+
+    public MetadataStorageApUpdateOperation() {
         // No-op.
     }
 
-    public ApMetadataPreJoinOperation(Map<Object, Object> entries) {
-        this.entries = entries;
+    public MetadataStorageApUpdateOperation(Object key, Object value, boolean ignoreOnExistenceConflict) {
+        this.key = key;
+        this.value = value;
+        this.ignoreOnExistenceConflict = ignoreOnExistenceConflict;
     }
 
     @Override
     public void run() throws Exception {
-        ApMetadataStorage storage = getService();
+        MetadataStorageAp storage = getService();
 
-        storage.addEntriesLocally(entries);
+        storage.updateLocally(key, value, ignoreOnExistenceConflict);
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
 
-        SerializationUtil.writeMap(entries, out);
+        out.writeObject(key);
+        out.writeObject(value);
+        out.writeBoolean(ignoreOnExistenceConflict);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
 
-        entries = SerializationUtil.readMap(in);
+        key = in.readObject();
+        value = in.readObject();
+        ignoreOnExistenceConflict = in.readBoolean();
     }
 }

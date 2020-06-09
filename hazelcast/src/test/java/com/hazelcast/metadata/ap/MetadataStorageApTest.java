@@ -39,7 +39,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ApMetadataStorageTest {
+public class MetadataStorageApTest {
 
     private TestHazelcastInstanceFactory factory;
 
@@ -158,7 +158,7 @@ public class ApMetadataStorageTest {
         assertEquals(value, restoredValue);
     }
 
-    private ApMetadataStorage getStore(HazelcastInstanceProxy instance) {
+    private MetadataStorageAp getStore(HazelcastInstanceProxy instance) {
         return instance.getOriginal().node.getNodeEngine().getApMetadataStore();
     }
 

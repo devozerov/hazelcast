@@ -41,7 +41,7 @@ import static java.util.Collections.singleton;
 /**
  * Metadata service with relaxed consistency guarantees.
  */
-public class ApMetadataStorage implements MetadataStorage, CoreService, ManagedService, PreJoinAwareService,
+public class MetadataStorageAp implements MetadataStorage, CoreService, ManagedService, PreJoinAwareService,
     SplitBrainHandlerService {
 
     public static final String SERVICE_NAME = "AP_METADATA_STORE";
@@ -50,7 +50,7 @@ public class ApMetadataStorage implements MetadataStorage, CoreService, ManagedS
     private final NodeEngineImpl nodeEngine;
     private final ConcurrentHashMap<Object, Object> entries = new ConcurrentHashMap<>();
 
-    public ApMetadataStorage(NodeEngineImpl nodeEngine) {
+    public MetadataStorageAp(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
     }
 
@@ -83,7 +83,7 @@ public class ApMetadataStorage implements MetadataStorage, CoreService, ManagedS
     }
 
     private void update(Object key, Object value, boolean ignoreOnExistenceConflict) {
-        broadcast(() -> new ApMetadataUpdateOperation(key, value, ignoreOnExistenceConflict));
+        broadcast(() -> new MetadataStorageApUpdateOperation(key, value, ignoreOnExistenceConflict));
     }
 
     void updateLocally(Object key, Object value, boolean ignoreOnExistenceConflict) {
@@ -127,7 +127,7 @@ public class ApMetadataStorage implements MetadataStorage, CoreService, ManagedS
             return null;
         }
 
-        return new ApMetadataPreJoinOperation(entries0);
+        return new MetadataStorageApPreJoinOperation(entries0);
     }
 
     @Override
@@ -163,7 +163,7 @@ public class ApMetadataStorage implements MetadataStorage, CoreService, ManagedS
 
         @Override
         public void run() {
-            broadcast(() -> new ApMetadataPreJoinOperation(entries));
+            broadcast(() -> new MetadataStorageApPreJoinOperation(entries));
         }
     }
 }

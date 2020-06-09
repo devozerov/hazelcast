@@ -24,7 +24,6 @@ import com.hazelcast.sql.impl.connector.SqlConnectorCache;
 import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
 import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PUBLIC;
@@ -33,9 +32,6 @@ import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 
 public class ExternalCatalog implements TableResolver {
-
-    // TODO: is it the best/right name?
-    public static final String CATALOG_MAP_NAME = "__sql.catalog";
 
     private static final List<List<String>> SEARCH_PATHS = singletonList(asList(CATALOG, SCHEMA_NAME_PUBLIC));
 
@@ -48,19 +44,24 @@ public class ExternalCatalog implements TableResolver {
     }
 
     public void createTable(ExternalTable table, boolean replace, boolean ifNotExists) {
+        if (replace) {
+            throw QueryException.error("CREATE OR REPLACE is not supported");
+        }
+
         String name = table.name();
-        if (ifNotExists) {
-            tables().putIfAbsent(name, table);
-        } else if (replace) {
-            tables().put(name, table);
-        } else if (tables().putIfAbsent(name, table) != null) {
+
+        try {
+            tables().create(table, ifNotExists);
+        } catch (Exception e) {
             throw QueryException.error("'" + name + "' table already exists");
         }
     }
 
     public void removeTable(String name, boolean ifExists) {
-        if (tables().remove(name) == null && !ifExists) {
-            throw QueryException.error("'" + name + "' table does not exist");
+        try {
+            tables().drop(name, ifExists);
+        } catch (Exception e) {
+            throw QueryException.error("'" + name + "' table does not exist", e);
         }
     }
 
@@ -76,9 +77,8 @@ public class ExternalCatalog implements TableResolver {
                        .collect(toList());
     }
 
-    private Map<String, ExternalTable> tables() {
-        // TODO: use the right storage
-        return nodeEngine.getHazelcastInstance().getReplicatedMap(CATALOG_MAP_NAME);
+    private ExternalCatalogAccessor tables() {
+        return new ExternalCatalogAccessor(nodeEngine.getApMetadataStore());
     }
 
     private Table toTable(ExternalTable extTable) {

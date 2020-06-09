@@ -27,9 +27,13 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-public class GetOperation extends RaftOp {
+public class GetOp extends AbstractMetadataOp {
 
-    Data key;
+    private Data key;
+
+    public GetOp(Data key) {
+        this.key = key;
+    }
 
     @Override
     public Object run(CPGroupId groupId, long commitIndex) throws Exception {
@@ -37,10 +41,6 @@ public class GetOperation extends RaftOp {
         return null;
     }
 
-    @Override
-    protected String getServiceName() {
-        return MetadataStoreCPService.SERVICE_NAME;
-    }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {

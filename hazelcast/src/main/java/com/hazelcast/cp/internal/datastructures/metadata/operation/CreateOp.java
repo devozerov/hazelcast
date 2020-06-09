@@ -26,21 +26,22 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-public class CreateOperation extends RaftOp {
+public class CreateOp extends AbstractMetadataOp {
 
     private boolean ifNotExists;
 
     private Data key;
     private Data value;
 
-    @Override
-    public Object run(CPGroupId groupId, long commitIndex) throws Exception {
-        return null;
+    public CreateOp(boolean ifNotExists, Data key, Data value) {
+        this.ifNotExists = ifNotExists;
+        this.key = key;
+        this.value = value;
     }
 
     @Override
-    protected String getServiceName() {
-        return MetadataStoreCPService.SERVICE_NAME;
+    public Object run(CPGroupId groupId, long commitIndex) throws Exception {
+        return null;
     }
 
     @Override

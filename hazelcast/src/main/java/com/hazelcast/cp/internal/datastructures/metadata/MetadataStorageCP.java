@@ -16,39 +16,47 @@
 
 package com.hazelcast.cp.internal.datastructures.metadata;
 
-import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.function.PredicateEx;
 import com.hazelcast.metadata.MetadataStorage;
 
+import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Predicate;
 
-// state machine implementation for MetadataStore
-public class MetadataStorageCPImpl implements MetadataStorage {
+// state for MetadataStorage
+public class MetadataStorageCP implements MetadataStorage {
 
-    private RaftGroupId group;
+    private final Map<Object, Object> entries = new HashMap<>();
 
-    public MetadataStorageCPImpl(RaftGroupId group) {
-        this.group = group;
-    }
-
-    @Override
     public Object get(Object key) {
-        return null;
+        return entries.get(key);
     }
 
     @Override
     public Map<Object, Object> getWithFilter(PredicateEx<Object> filter) {
-        return null;
+        Map<Object, Object> res = new HashMap<>();
+        entries.forEach((k, v) -> {
+            if (filter.test(k)) {
+                res.put(k, v);
+            }
+        });
+        return res;
     }
 
     @Override
     public void create(Object key, Object value, boolean ifNotExists) {
-
+        if (ifNotExists) {
+            entries.putIfAbsent(key, value);
+        } else {
+            entries.put(key, value);
+        }
     }
 
     @Override
-    public void drop(Object key, boolean isExists) {
-
+    public void drop(Object key, boolean ifExists) {
+        if (ifExists && !entries.containsKey(key))  {
+            throw new IllegalStateException(key + " was not present");
+        }
+        entries.remove(key);
     }
+
 }

@@ -20,25 +20,34 @@ import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.datastructures.spi.RaftManagedService;
+import com.hazelcast.cp.internal.persistence.CPMetadataStore;
 import com.hazelcast.cp.internal.raft.SnapshotAwareService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.metadata.MetadataStorage;
 import com.hazelcast.spi.impl.NodeEngine;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 
-public class MetadataStoreCPService implements RaftManagedService, SnapshotAwareService<MetadataStorage> {
+public class MetadataStoreCPService implements RaftManagedService, SnapshotAwareService<MetadataStorageCP> {
 
     public static final String METADATA_STORE_GROUP_NAME = "__metadata_store@metadata_store";
     public static final String SERVICE_NAME = "hz:raft:metadataStoreService";
 
     private final ILogger logger;
+    private final NodeEngine nodeEngine;
+
+    private final Map<CPGroupId, MetadataStorageCP> storage = new ConcurrentHashMap<>();
 
     private RaftService raftService;
-    private RaftGroupId groupId;
+
 
     public MetadataStoreCPService(NodeEngine nodeEngine) {
         this.logger = nodeEngine.getLogger(getClass().getName());
+        this.nodeEngine = nodeEngine;
     }
 
     @Override
@@ -49,22 +58,30 @@ public class MetadataStoreCPService implements RaftManagedService, SnapshotAware
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
         this.raftService = nodeEngine.getService(RaftService.SERVICE_NAME);
+
+        if (this.raftService.isCpSubsystemEnabled()) {
+            // TODO: create the store on startup
+        }
     }
 
     public MetadataStorage getMetadataStore() {
         RaftGroupId group = this.raftService.createRaftGroupForProxy(METADATA_STORE_GROUP_NAME);
-        return new MetadataStorageCPImpl(group);
+        return new MetadataStorageProxy(this.nodeEngine, group);
+    }
 
+    public MetadataStorageCP getMetadataStoreState(CPGroupId groupId) {
+        return storage.computeIfAbsent(groupId, key -> new MetadataStorageCP());
     }
 
     @Override
-    public MetadataStorage takeSnapshot(CPGroupId groupId, long commitIndex) {
+    public MetadataStorageCP takeSnapshot(CPGroupId groupId, long commitIndex) {
+        System.out.println("take snapshot");
         return null;
     }
 
     @Override
-    public void restoreSnapshot(CPGroupId groupId, long commitIndex, MetadataStorage snapshot) {
-
+    public void restoreSnapshot(CPGroupId groupId, long commitIndex, MetadataStorageCP snapshot) {
+        System.out.println("restore snapshot");
     }
 
     @Override

@@ -25,18 +25,18 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-public class DropOperation extends RaftOp {
+public class DropOp extends AbstractMetadataOp {
 
-    Data key;
-    boolean ifExists;
+    private Data key;
+    private boolean ifExists;
 
-    @Override
-    public Object run(CPGroupId groupId, long commitIndex) throws Exception {
-        return null;
+    public DropOp(boolean ifExists, Data key) {
+        this.key = key;
+        this.ifExists = ifExists;
     }
 
     @Override
-    protected String getServiceName() {
+    public Object run(CPGroupId groupId, long commitIndex) throws Exception {
         return null;
     }
 

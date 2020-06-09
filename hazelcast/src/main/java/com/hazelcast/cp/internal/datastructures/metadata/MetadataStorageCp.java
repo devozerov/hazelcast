@@ -21,14 +21,24 @@ import com.hazelcast.function.PredicateEx;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.metadata.MetadataStorage;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Predicate;
 
 // state for MetadataStorage
-public class MetadataStorageCP {
+public class MetadataStorageCp implements Serializable {
 
-    private final Map<Object, Object> entries = new HashMap<>();
+    final Map<Object, Object> entries;
+
+    public MetadataStorageCp() {
+        this.entries = new HashMap<>();
+    }
+
+    public MetadataStorageCp(MetadataStorageCp storage) {
+        this.entries = new HashMap<>(storage.entries);
+    }
+
 
     public Object get(Object key) {
         return entries.get(key);
@@ -58,5 +68,12 @@ public class MetadataStorageCP {
                 throw new HazelcastException("Entry already exists: " + key);
             }
         }
+    }
+
+    @Override
+    public String toString() {
+        return "MetadataStorageCp{" +
+                "entries=" + entries +
+                '}';
     }
 }

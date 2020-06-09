@@ -16,6 +16,7 @@
 
 package com.hazelcast.cp.internal.datastructures.metadata;
 
+import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.RaftInvocationManager;
 import com.hazelcast.cp.internal.RaftService;
@@ -32,13 +33,13 @@ import com.hazelcast.spi.impl.NodeEngine;
 import java.util.Map;
 
 // proxy for MetadataStore
-public class MetadataStorageProxy implements MetadataStorage {
+public class MetadataStorageCpProxy implements MetadataStorage {
 
     private final RaftInvocationManager invocationManager;
     private final SerializationService serializationService;
     private RaftGroupId group;
 
-    public MetadataStorageProxy(NodeEngine nodeEngine, RaftGroupId group) {
+    public MetadataStorageCpProxy(NodeEngine nodeEngine, RaftGroupId group) {
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
         this.invocationManager = service.getInvocationManager();
         this.serializationService = nodeEngine.getSerializationService();
@@ -52,7 +53,7 @@ public class MetadataStorageProxy implements MetadataStorage {
 
     @Override
     public Map<Object, Object> getWithFilter(PredicateEx<Object> filter) {
-        Object response = invocationManager.invoke(group, new GetWithPredicateOp(toData(filter))).joinInternal();
+        Object response = invocationManager.query(group, new GetWithPredicateOp(toData(filter)), QueryPolicy.LINEARIZABLE).joinInternal();
         return (Map<Object, Object>) response;
     }
 
@@ -68,5 +69,9 @@ public class MetadataStorageProxy implements MetadataStorage {
 
     private Data toData(Object value) {
         return serializationService.toData(value);
+    }
+
+    public CPGroupId getGroupId() {
+        return group;
     }
 }

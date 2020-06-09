@@ -31,7 +31,7 @@ import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
 import com.hazelcast.cp.internal.datastructures.lock.LockService;
-import com.hazelcast.cp.internal.datastructures.metadata.MetadataStoreCPService;
+import com.hazelcast.cp.internal.datastructures.metadata.MetadataStorageCpService;
 import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.cp.internal.datastructures.spi.RaftRemoteService;
 import com.hazelcast.cp.internal.session.RaftSessionService;
@@ -109,7 +109,7 @@ public class CPSubsystemImpl implements CPSubsystem {
     @Nonnull
     @Override
     public MetadataStorage getMetadataStore() {
-        MetadataStoreCPService service = getService(MetadataStoreCPService.SERVICE_NAME);
+        MetadataStorageCpService service = getService(MetadataStorageCpService.SERVICE_NAME);
         return service.getMetadataStore();
     }
 

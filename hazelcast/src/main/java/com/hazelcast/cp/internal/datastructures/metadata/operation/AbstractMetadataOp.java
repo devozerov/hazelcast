@@ -18,20 +18,20 @@ package com.hazelcast.cp.internal.datastructures.metadata.operation;
 
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftOp;
-import com.hazelcast.cp.internal.datastructures.metadata.MetadataStorageCP;
-import com.hazelcast.cp.internal.datastructures.metadata.MetadataStoreCPService;
+import com.hazelcast.cp.internal.datastructures.metadata.MetadataStorageCp;
+import com.hazelcast.cp.internal.datastructures.metadata.MetadataStorageCpService;
 import com.hazelcast.internal.serialization.Data;
 
 public abstract class AbstractMetadataOp extends RaftOp {
 
-    MetadataStorageCP getStorage(CPGroupId groupId) {
-        MetadataStoreCPService service = getService();
+    MetadataStorageCp getStorage(CPGroupId groupId) {
+        MetadataStorageCpService service = getService();
         return service.getMetadataStoreState(groupId);
     }
 
     @Override
     protected String getServiceName() {
-        return MetadataStoreCPService.SERVICE_NAME;
+        return MetadataStorageCpService.SERVICE_NAME;
     }
 
     <T> T toObject(Data data) {

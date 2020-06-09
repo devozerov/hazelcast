@@ -200,6 +200,13 @@ public class MetadataStorageApTest {
         public int hashCode() {
             return value;
         }
+
+        @Override
+        public String toString() {
+            return "MetadataKey{" +
+                     + value +
+                    '}';
+        }
     }
 
     @SuppressWarnings("unused")
@@ -237,6 +244,13 @@ public class MetadataStorageApTest {
         @Override
         public int hashCode() {
             return value;
+        }
+
+        @Override
+        public String toString() {
+            return "MetadataValue{" +
+                   + value +
+                    '}';
         }
     }
 }

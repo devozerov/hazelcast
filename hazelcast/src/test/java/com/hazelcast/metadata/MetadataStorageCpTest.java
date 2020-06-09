@@ -16,12 +16,21 @@
 
 package com.hazelcast.metadata;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.cp.exception.CPSubsystemException;
 import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
+import com.hazelcast.cp.internal.datastructures.metadata.MetadataStorageCpProxy;
+import com.hazelcast.cp.internal.datastructures.metadata.operation.GetWithPredicateOp;
+import com.hazelcast.cp.internal.raft.QueryPolicy;
 import com.hazelcast.function.PredicateEx;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.metadata.MetadataStorageApTest.MetadataKey;
 import com.hazelcast.metadata.MetadataStorageApTest.MetadataValue;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -32,6 +41,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -42,8 +52,10 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MetadataStorageCpTest extends HazelcastRaftTestSupport {
 
+    private static final int SNAPSHOT_THRESHOLD = 100;
     private HazelcastInstance member1;
     private HazelcastInstance member2;
+    private HazelcastInstance member3;
 
     @Before
     public void setup() {
@@ -51,6 +63,15 @@ public class MetadataStorageCpTest extends HazelcastRaftTestSupport {
 
         member1 = instances[0];
         member2 = instances[1];
+        member3 = instances[2];
+    }
+
+    @Override
+    protected Config createConfig(int cpNodeCount, int groupSize) {
+        Config config = super.createConfig(cpNodeCount, groupSize);
+        config.getCPSubsystemConfig().getRaftAlgorithmConfig()
+              .setCommitIndexAdvanceCountToSnapshot(SNAPSHOT_THRESHOLD);
+        return config;
     }
 
     @Test
@@ -137,8 +158,41 @@ public class MetadataStorageCpTest extends HazelcastRaftTestSupport {
     }
 
 
+    @Test
+    public void testSnapshotRestore() throws ExecutionException, InterruptedException {
+        MetadataStorage store = getStore(member1);
+        store.create(new MetadataKey(-1), new MetadataValue(-1), false);
+
+        for (int i = 0; i < SNAPSHOT_THRESHOLD; i++) {
+            store.create(new MetadataKey(i), new MetadataValue(i), false);
+        }
+
+        // shutdown the last instance
+        member3.shutdown();
+
+
+        // create the new instance and promote to CP
+        HazelcastInstance instance = factory.newHazelcastInstance(createConfig(3, 3));
+        instance.getCPSubsystem().getCPSubsystemManagementService().promoteToCPMember()
+                .toCompletableFuture().get();
+
+        assertTrueEventually(() -> {
+            try {
+                MetadataStorageCpProxy proxy = (MetadataStorageCpProxy) getStore(instance);
+                CPGroupId group = proxy.getGroupId();
+                Data p = Accessors.getSerializationService(instance).toData(PredicateEx.alwaysTrue());
+                InternalCompletableFuture<Object> resp = getRaftInvocationManager(instance).queryLocally(group, new GetWithPredicateOp(p), QueryPolicy.ANY_LOCAL);
+
+                Map<Object, Object> values = (Map<Object, Object>) resp.joinInternal();
+                assertEquals(SNAPSHOT_THRESHOLD + 1, values.size());
+            } catch (CPSubsystemException ex) {
+                // Raft node may not be created yet...
+                throw new AssertionError(ex);
+            }
+        });
+    }
+
     private static MetadataStorage getStore(HazelcastInstance instance) {
         return instance.getCPSubsystem().getMetadataStore();
     }
-
 }

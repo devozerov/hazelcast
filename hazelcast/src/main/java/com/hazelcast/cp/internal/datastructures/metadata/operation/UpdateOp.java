@@ -17,7 +17,7 @@
 package com.hazelcast.cp.internal.datastructures.metadata.operation;
 
 import com.hazelcast.cp.CPGroupId;
-import com.hazelcast.cp.internal.datastructures.metadata.MetadataStorageCP;
+import com.hazelcast.cp.internal.datastructures.metadata.MetadataStorageCp;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.ObjectDataInput;
@@ -43,7 +43,7 @@ public class UpdateOp extends AbstractMetadataOp {
 
     @Override
     public Object run(CPGroupId groupId, long commitIndex) throws Exception {
-        MetadataStorageCP storage = getStorage(groupId);
+        MetadataStorageCp storage = getStorage(groupId);
         storage.update(toObject(key), toObject(value), ignoreConflict);
         return null;
     }

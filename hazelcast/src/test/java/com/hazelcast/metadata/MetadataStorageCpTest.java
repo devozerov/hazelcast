@@ -181,6 +181,7 @@ public class MetadataStorageCpTest extends HazelcastRaftTestSupport {
                 MetadataStorageCpProxy proxy = (MetadataStorageCpProxy) getStore(instance);
                 CPGroupId group = proxy.getGroupId();
                 Data p = Accessors.getSerializationService(instance).toData(PredicateEx.alwaysTrue());
+                // must query the new member, or it can just ask one of the old members
                 InternalCompletableFuture<Object> resp = getRaftInvocationManager(instance).queryLocally(group, new GetWithPredicateOp(p), QueryPolicy.ANY_LOCAL);
 
                 Map<Object, Object> values = (Map<Object, Object>) resp.joinInternal();

@@ -31,6 +31,7 @@ import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
 import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
 import com.hazelcast.cp.internal.datastructures.lock.LockService;
+import com.hazelcast.cp.internal.datastructures.metadata.MetadataStoreCPService;
 import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.cp.internal.datastructures.spi.RaftRemoteService;
 import com.hazelcast.cp.internal.session.RaftSessionService;
@@ -38,6 +39,7 @@ import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.cp.session.CPSessionManagementService;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.metadata.MetadataStore;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import javax.annotation.Nonnull;
@@ -102,6 +104,13 @@ public class CPSubsystemImpl implements CPSubsystem {
     public ISemaphore getSemaphore(@Nonnull String name) {
         checkNotNull(name, "Retrieving a semaphore instance with a null name is not allowed!");
         return createProxy(SemaphoreService.SERVICE_NAME, name);
+    }
+
+    @Nonnull
+    @Override
+    public MetadataStore getMetadataStore() {
+        MetadataStoreCPService service = getService(MetadataStoreCPService.SERVICE_NAME);
+        return service.getMetadataStore();
     }
 
     @Override

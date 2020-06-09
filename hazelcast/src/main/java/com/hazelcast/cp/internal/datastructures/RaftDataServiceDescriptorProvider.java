@@ -17,6 +17,7 @@
 package com.hazelcast.cp.internal.datastructures;
 
 import com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchService;
+import com.hazelcast.cp.internal.datastructures.metadata.MetadataStoreCPService;
 import com.hazelcast.cp.internal.session.ProxySessionManagerService;
 import com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongService;
 import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
@@ -38,6 +39,7 @@ public class RaftDataServiceDescriptorProvider implements ServiceDescriptorProvi
             new LockServiceDescriptor(),
             new RaftSessionManagerServiceDescriptor(),
             new AtomicRefServiceDescriptor(),
+            new MetadataStoreServiceDescriptor(),
             new SemaphoreServiceDescriptor(),
             new CountDownLatchServiceDescriptor(),
         };
@@ -88,6 +90,18 @@ public class RaftDataServiceDescriptorProvider implements ServiceDescriptorProvi
         @Override
         public Object getService(NodeEngine nodeEngine) {
             return new AtomicRefService(nodeEngine);
+        }
+    }
+
+    private static class MetadataStoreServiceDescriptor implements ServiceDescriptor {
+        @Override
+        public String getServiceName() {
+            return MetadataStoreCPService.SERVICE_NAME;
+        }
+
+        @Override
+        public Object getService(NodeEngine nodeEngine) {
+            return new MetadataStoreCPService(nodeEngine);
         }
     }
 

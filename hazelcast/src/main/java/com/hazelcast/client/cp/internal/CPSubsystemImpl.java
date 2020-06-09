@@ -33,6 +33,7 @@ import com.hazelcast.cp.internal.datastructures.lock.LockService;
 import com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreService;
 import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.cp.session.CPSessionManagementService;
+import com.hazelcast.metadata.MetadataStore;
 
 import javax.annotation.Nonnull;
 
@@ -86,6 +87,12 @@ public class CPSubsystemImpl implements CPSubsystem {
     public ISemaphore getSemaphore(@Nonnull String name) {
         checkNotNull(name, "Retrieving a semaphore instance with a null name is not allowed!");
         return proxyFactory.createProxy(SemaphoreService.SERVICE_NAME, name);
+    }
+
+    @Nonnull
+    @Override
+    public MetadataStore getMetadataStore() {
+        throw new UnsupportedOperationException();
     }
 
     @Override

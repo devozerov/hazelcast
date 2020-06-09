@@ -17,18 +17,22 @@
 package com.hazelcast.cp.internal.datastructures.metadata.operation;
 
 import com.hazelcast.cp.CPGroupId;
-import com.hazelcast.cp.internal.RaftOp;
-import com.hazelcast.cp.internal.datastructures.metadata.MetadataStoreCPService;
+import com.hazelcast.cp.internal.datastructures.metadata.MetadataStorageCp;
+import com.hazelcast.cp.internal.datastructures.metadata.MetadataStorageCpService;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
+import java.util.function.Predicate;
 
-public class GetWithPredicateOp extends RaftOp {
+public class GetWithPredicateOp extends AbstractMetadataOp {
 
     private Data predicate;
+
+    public GetWithPredicateOp() {
+    }
 
     public GetWithPredicateOp(Data predicate) {
         this.predicate = predicate;
@@ -36,13 +40,14 @@ public class GetWithPredicateOp extends RaftOp {
 
     @Override
     public Object run(CPGroupId groupId, long commitIndex) throws Exception {
-        // return the response here
-        return null;
+        MetadataStorageCp storage = getStorage(groupId);
+        Predicate<Object> p = toObject(predicate);
+        return storage.getWithFilter(p);
     }
 
     @Override
     protected String getServiceName() {
-        return MetadataStoreCPService.SERVICE_NAME;
+        return MetadataStorageCpService.SERVICE_NAME;
     }
 
     @Override

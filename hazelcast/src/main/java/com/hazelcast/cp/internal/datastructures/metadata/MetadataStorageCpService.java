@@ -20,7 +20,6 @@ import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.datastructures.spi.RaftManagedService;
-import com.hazelcast.cp.internal.persistence.CPMetadataStore;
 import com.hazelcast.cp.internal.raft.SnapshotAwareService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.metadata.MetadataStorage;
@@ -30,9 +29,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
 
-public class MetadataStoreCPService implements RaftManagedService, SnapshotAwareService<MetadataStorageCP> {
+public class MetadataStorageCpService implements RaftManagedService, SnapshotAwareService<MetadataStorageCp> {
 
     public static final String METADATA_STORE_GROUP_NAME = "__metadata_store@metadata_store";
     public static final String SERVICE_NAME = "hz:raft:metadataStoreService";
@@ -40,12 +38,12 @@ public class MetadataStoreCPService implements RaftManagedService, SnapshotAware
     private final ILogger logger;
     private final NodeEngine nodeEngine;
 
-    private final Map<CPGroupId, MetadataStorageCP> storage = new ConcurrentHashMap<>();
+    private final Map<CPGroupId, MetadataStorageCp> storage = new ConcurrentHashMap<>();
 
     private RaftService raftService;
 
 
-    public MetadataStoreCPService(NodeEngine nodeEngine) {
+    public MetadataStorageCpService(NodeEngine nodeEngine) {
         this.logger = nodeEngine.getLogger(getClass().getName());
         this.nodeEngine = nodeEngine;
     }
@@ -66,27 +64,30 @@ public class MetadataStoreCPService implements RaftManagedService, SnapshotAware
 
     public MetadataStorage getMetadataStore() {
         RaftGroupId group = this.raftService.createRaftGroupForProxy(METADATA_STORE_GROUP_NAME);
-        return new MetadataStorageProxy(this.nodeEngine, group);
+        return new MetadataStorageCpProxy(this.nodeEngine, group);
     }
 
-    public MetadataStorageCP getMetadataStoreState(CPGroupId groupId) {
-        return storage.computeIfAbsent(groupId, key -> new MetadataStorageCP());
-    }
-
-    @Override
-    public MetadataStorageCP takeSnapshot(CPGroupId groupId, long commitIndex) {
-        System.out.println("take snapshot");
-        return null;
+    public MetadataStorageCp getMetadataStoreState(CPGroupId groupId) {
+        return storage.computeIfAbsent(groupId, key -> new MetadataStorageCp());
     }
 
     @Override
-    public void restoreSnapshot(CPGroupId groupId, long commitIndex, MetadataStorageCP snapshot) {
-        System.out.println("restore snapshot");
+    public MetadataStorageCp takeSnapshot(CPGroupId groupId, long commitIndex) {
+        System.out.println("Taking snapshot");
+        return new MetadataStorageCp(storage.get(groupId));
+    }
+
+    @Override
+    public void restoreSnapshot(CPGroupId groupId, long commitIndex, MetadataStorageCp snapshot) {
+        System.out.println("Restoring snapshot");
+        storage.put(groupId, new MetadataStorageCp(snapshot));
     }
 
     @Override
     public void reset() {
-
+        if (!raftService.isCpSubsystemEnabled()) {
+            storage.clear();
+        }
     }
 
     @Override

@@ -39,7 +39,7 @@ import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.cp.session.CPSessionManagementService;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.metadata.MetadataStore;
+import com.hazelcast.metadata.MetadataStorage;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import javax.annotation.Nonnull;
@@ -108,7 +108,7 @@ public class CPSubsystemImpl implements CPSubsystem {
 
     @Nonnull
     @Override
-    public MetadataStore getMetadataStore() {
+    public MetadataStorage getMetadataStore() {
         MetadataStoreCPService service = getService(MetadataStoreCPService.SERVICE_NAME);
         return service.getMetadataStore();
     }

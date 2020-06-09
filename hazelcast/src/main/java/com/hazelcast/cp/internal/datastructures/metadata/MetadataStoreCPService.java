@@ -22,14 +22,12 @@ import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.datastructures.spi.RaftManagedService;
 import com.hazelcast.cp.internal.raft.SnapshotAwareService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.metadata.MetadataStore;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
+import com.hazelcast.metadata.MetadataStorage;
 import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.Properties;
-import java.util.concurrent.ExecutionException;
 
-public class MetadataStoreCPService implements RaftManagedService, SnapshotAwareService<MetadataStore> {
+public class MetadataStoreCPService implements RaftManagedService, SnapshotAwareService<MetadataStorage> {
 
     public static final String METADATA_STORE_GROUP_NAME = "__metadata_store@metadata_store";
     public static final String SERVICE_NAME = "hz:raft:metadataStoreService";
@@ -53,19 +51,19 @@ public class MetadataStoreCPService implements RaftManagedService, SnapshotAware
         this.raftService = nodeEngine.getService(RaftService.SERVICE_NAME);
     }
 
-    public MetadataStore getMetadataStore() {
+    public MetadataStorage getMetadataStore() {
         RaftGroupId group = this.raftService.createRaftGroupForProxy(METADATA_STORE_GROUP_NAME);
-        return new MetadataStoreCPImpl(group);
+        return new MetadataStorageCPImpl(group);
 
     }
 
     @Override
-    public MetadataStore takeSnapshot(CPGroupId groupId, long commitIndex) {
+    public MetadataStorage takeSnapshot(CPGroupId groupId, long commitIndex) {
         return null;
     }
 
     @Override
-    public void restoreSnapshot(CPGroupId groupId, long commitIndex, MetadataStore snapshot) {
+    public void restoreSnapshot(CPGroupId groupId, long commitIndex, MetadataStorage snapshot) {
 
     }
 

@@ -35,7 +35,7 @@ public class CPMetadataTest extends HazelcastRaftTestSupport {
         HazelcastInstance[] instances = newInstances(3);
 
         HazelcastInstance hz = instances[0];
-        MetadataStore store = hz.getCPSubsystem().getMetadataStore();
+        MetadataStorage store = hz.getCPSubsystem().getMetadataStore();
 
         for (CPGroupId cpGroupId : hz.getCPSubsystem().getCPSubsystemManagementService().getCPGroupIds()
                                      .toCompletableFuture().join()) {

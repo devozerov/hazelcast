@@ -16,5 +16,30 @@
 
 package com.hazelcast.cp.internal.datastructures.metadata;
 
-public class MetadataStoreCPProxy {
+import com.hazelcast.metadata.MetadataStore;
+
+import java.util.Map;
+import java.util.function.Predicate;
+
+public class MetadataStoreCPProxy implements MetadataStore {
+
+    @Override
+    public Object get(Object key) {
+        return null;
+    }
+
+    @Override
+    public Map<Object, Object> getWithFilter(Predicate<Object> filter) {
+        return null;
+    }
+
+    @Override
+    public void create(Object key, Object value, boolean ifNotExists) {
+
+    }
+
+    @Override
+    public void drop(Object key, boolean ifExists) {
+
+    }
 }

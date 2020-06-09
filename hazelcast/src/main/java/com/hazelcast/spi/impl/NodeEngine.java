@@ -26,6 +26,7 @@ import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.metadata.ap.ApMetadataStore;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
@@ -120,6 +121,8 @@ public interface NodeEngine {
      * @return the TransactionManagerService
      */
     TransactionManagerService getTransactionManagerService();
+
+    ApMetadataStore getApMetadataStore();
 
     /**
      * Gets the address of the master member.

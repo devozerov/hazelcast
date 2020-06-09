@@ -16,19 +16,28 @@
 
 package com.hazelcast.metadata.ap;
 
+import com.hazelcast.internal.services.CoreService;
+import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.internal.services.PreJoinAwareService;
+import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.metadata.MetadataStore;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
 /**
  * Metadata service with relaxed consistency guarantees.
  */
-// TODO: Implement merge on join
-public class ApMetadataStore implements MetadataStore {
+public class ApMetadataStore implements MetadataStore, CoreService, ManagedService, PreJoinAwareService,
+    SplitBrainHandlerService {
+
+    public static final String SERVICE_NAME = "AP_METADATA_STORE";
 
     private final NodeEngineImpl nodeEngine;
     private final ConcurrentHashMap<Object, Object> entries = new ConcurrentHashMap<>();
@@ -63,6 +72,34 @@ public class ApMetadataStore implements MetadataStore {
     @Override
     public void drop(Object key, boolean ifExists) {
         update(key, null, ifExists);
+    }
+
+    @Override
+    public void init(NodeEngine nodeEngine, Properties properties) {
+        System.out.println(">>> INTT");
+        // No-op.
+    }
+
+    @Override
+    public void reset() {
+        entries.clear();
+    }
+
+    @Override
+    public void shutdown(boolean terminate) {
+        // No-op.
+    }
+
+    @Override
+    public Operation getPreJoinOperation() {
+        // TODO: Share configs on pre-join
+        return null;
+    }
+
+    @Override
+    public Runnable prepareMergeRunnable() {
+        // TODO: Handle split-brain
+        return null;
     }
 
     private void update(Object ket, Object value, boolean ignoreOnExistenceConflict) {

@@ -19,15 +19,19 @@ package com.hazelcast.metadata.ap;
 import com.hazelcast.metadata.MetadataStore;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
 /**
  * Metadata service with relaxed consistency guarantees.
  */
+// TODO: Implement merge on join
 public class ApMetadataStore implements MetadataStore {
 
     private final NodeEngineImpl nodeEngine;
+    private final ConcurrentHashMap<Object, Object> entries = new ConcurrentHashMap<>();
 
     public ApMetadataStore(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -35,21 +39,33 @@ public class ApMetadataStore implements MetadataStore {
 
     @Override
     public Object get(Object key) {
-        return null;
+        return entries.get(key);
     }
 
     @Override
     public Map<Object, Object> getWithFilter(Predicate<Object> filter) {
-        return null;
+        HashMap<Object, Object> res = new HashMap<>();
+
+        for (Map.Entry<Object, Object> entry : entries.entrySet()) {
+            if (filter.test(entry.getKey())) {
+                res.put(entry.getKey(), entry.getValue());
+            }
+        }
+
+        return res;
     }
 
     @Override
     public void create(Object key, Object value, boolean ifNotExists) {
-
+        update(key, value, ifNotExists);
     }
 
     @Override
-    public void drop(Object key, boolean isExists) {
+    public void drop(Object key, boolean ifExists) {
+        update(key, null, ifExists);
+    }
 
+    private void update(Object ket, Object value, boolean ignoreOnExistenceConflict) {
+        // TODO: Implement update
     }
 }

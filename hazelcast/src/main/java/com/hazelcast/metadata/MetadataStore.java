@@ -54,8 +54,8 @@ public interface MetadataStore {
      * Drop the metadata entry.
      *
      * @param key Key.
-     * @param isExists If {@code true} then the command will be ignored if an entry with the given key doens't exist,
+     * @param ifExists If {@code true} then the command will be ignored if an entry with the given key doens't exist,
      *                 if {@code false} an exception will be thrown.
      */
-    void drop(Object key, boolean isExists);
+    void drop(Object key, boolean ifExists);
 }

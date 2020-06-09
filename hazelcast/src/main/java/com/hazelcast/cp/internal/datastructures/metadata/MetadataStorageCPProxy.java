@@ -16,12 +16,12 @@
 
 package com.hazelcast.cp.internal.datastructures.metadata;
 
-import com.hazelcast.metadata.MetadataStore;
+import com.hazelcast.metadata.MetadataStorage;
 
 import java.util.Map;
 import java.util.function.Predicate;
 
-public class MetadataStoreCPProxy implements MetadataStore {
+public class MetadataStorageCPProxy implements MetadataStorage {
 
     @Override
     public Object get(Object key) {

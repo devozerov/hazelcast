@@ -31,7 +31,7 @@ import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ApMetadataStoreTest {
+public class ApMetadataStorageTest {
 
     private TestHazelcastInstanceFactory factory;
 
@@ -58,7 +58,7 @@ public class ApMetadataStoreTest {
         assertNull(getStore(member1).get("not_exists"));
     }
 
-    private ApMetadataStore getStore(HazelcastInstanceProxy instance) {
+    private ApMetadataStorage getStore(HazelcastInstanceProxy instance) {
         return instance.getOriginal().node.getNodeEngine().getApMetadataStore();
     }
 }

@@ -17,17 +17,18 @@
 package com.hazelcast.cp.internal.datastructures.metadata;
 
 import com.hazelcast.cp.internal.RaftGroupId;
-import com.hazelcast.metadata.MetadataStore;
+import com.hazelcast.function.PredicateEx;
+import com.hazelcast.metadata.MetadataStorage;
 
 import java.util.Map;
 import java.util.function.Predicate;
 
 // state machine implementation for MetadataStore
-public class MetadataStoreCPImpl implements MetadataStore {
+public class MetadataStorageCPImpl implements MetadataStorage {
 
     private RaftGroupId group;
 
-    public MetadataStoreCPImpl(RaftGroupId group) {
+    public MetadataStorageCPImpl(RaftGroupId group) {
         this.group = group;
     }
 
@@ -37,7 +38,7 @@ public class MetadataStoreCPImpl implements MetadataStore {
     }
 
     @Override
-    public Map<Object, Object> getWithFilter(Predicate<Object> filter) {
+    public Map<Object, Object> getWithFilter(PredicateEx<Object> filter) {
         return null;
     }
 

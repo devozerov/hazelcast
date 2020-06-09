@@ -16,13 +16,15 @@
 
 package com.hazelcast.metadata;
 
+import com.hazelcast.function.PredicateEx;
+
 import java.util.Map;
 import java.util.function.Predicate;
 
 /**
  * Metadata service, AP or CP.
  */
-public interface MetadataStore {
+public interface MetadataStorage {
     /**
      * Get the metadata entry.
      *
@@ -37,7 +39,7 @@ public interface MetadataStore {
      * @param filter Filter applied to keys.
      * @return Objects that pass the filter.
      */
-    Map<Object, Object> getWithFilter(Predicate<Object> filter);
+    Map<Object, Object> getWithFilter(PredicateEx<Object> filter);
 
     /**
      * Create the metadata entry.

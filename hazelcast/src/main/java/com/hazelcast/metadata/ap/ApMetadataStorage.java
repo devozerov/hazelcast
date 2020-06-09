@@ -20,7 +20,7 @@ import com.hazelcast.internal.services.CoreService;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.services.PreJoinAwareService;
 import com.hazelcast.internal.services.SplitBrainHandlerService;
-import com.hazelcast.metadata.MetadataStore;
+import com.hazelcast.metadata.MetadataStorage;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -34,7 +34,7 @@ import java.util.function.Predicate;
 /**
  * Metadata service with relaxed consistency guarantees.
  */
-public class ApMetadataStore implements MetadataStore, CoreService, ManagedService, PreJoinAwareService,
+public class ApMetadataStorage implements MetadataStorage, CoreService, ManagedService, PreJoinAwareService,
     SplitBrainHandlerService {
 
     public static final String SERVICE_NAME = "AP_METADATA_STORE";
@@ -42,7 +42,7 @@ public class ApMetadataStore implements MetadataStore, CoreService, ManagedServi
     private final NodeEngineImpl nodeEngine;
     private final ConcurrentHashMap<Object, Object> entries = new ConcurrentHashMap<>();
 
-    public ApMetadataStore(NodeEngineImpl nodeEngine) {
+    public ApMetadataStorage(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
     }
 

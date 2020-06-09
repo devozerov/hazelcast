@@ -16,6 +16,7 @@
 
 package com.hazelcast.metadata.ap;
 
+import com.hazelcast.function.PredicateEx;
 import com.hazelcast.internal.services.CoreService;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.services.PreJoinAwareService;
@@ -52,7 +53,7 @@ public class ApMetadataStorage implements MetadataStorage, CoreService, ManagedS
     }
 
     @Override
-    public Map<Object, Object> getWithFilter(Predicate<Object> filter) {
+    public Map<Object, Object> getWithFilter(PredicateEx<Object> filter) {
         HashMap<Object, Object> res = new HashMap<>();
 
         for (Map.Entry<Object, Object> entry : entries.entrySet()) {

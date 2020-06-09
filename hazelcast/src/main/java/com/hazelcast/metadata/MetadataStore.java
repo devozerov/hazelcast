@@ -22,7 +22,7 @@ import java.util.function.Predicate;
 /**
  * Metadata service, AP or CP.
  */
-public interface MetadataService {
+public interface MetadataStore {
     /**
      * Get the metadata entry.
      *
@@ -48,6 +48,7 @@ public interface MetadataService {
      *                    if {@code false} an exception will be thrown.
      */
     void create(Object key, Object value, boolean ifNotExists);
+
 
     /**
      * Drop the metadata entry.

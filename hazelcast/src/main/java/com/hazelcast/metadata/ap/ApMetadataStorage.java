@@ -16,11 +16,14 @@
 
 package com.hazelcast.metadata.ap;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.function.PredicateEx;
 import com.hazelcast.internal.services.CoreService;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.services.PreJoinAwareService;
 import com.hazelcast.internal.services.SplitBrainHandlerService;
+import com.hazelcast.internal.util.FutureUtil;
+import com.hazelcast.internal.util.InvocationUtil;
 import com.hazelcast.metadata.MetadataStorage;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -30,7 +33,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Predicate;
+import java.util.concurrent.Future;
+import java.util.function.Supplier;
+
+import static java.util.Collections.singleton;
 
 /**
  * Metadata service with relaxed consistency guarantees.
@@ -39,6 +45,7 @@ public class ApMetadataStorage implements MetadataStorage, CoreService, ManagedS
     SplitBrainHandlerService {
 
     public static final String SERVICE_NAME = "AP_METADATA_STORE";
+    public static final int RETRY_COUNT = 100;
 
     private final NodeEngineImpl nodeEngine;
     private final ConcurrentHashMap<Object, Object> entries = new ConcurrentHashMap<>();
@@ -75,9 +82,30 @@ public class ApMetadataStorage implements MetadataStorage, CoreService, ManagedS
         update(key, null, ifExists);
     }
 
+    private void update(Object key, Object value, boolean ignoreOnExistenceConflict) {
+        broadcast(() -> new ApMetadataUpdateOperation(key, value, ignoreOnExistenceConflict));
+    }
+
+    void updateLocally(Object key, Object value, boolean ignoreOnExistenceConflict) {
+        boolean drop = value == null;
+
+        if (drop) {
+            Object oldValue = entries.remove(key);
+
+            if (oldValue == null && !ignoreOnExistenceConflict) {
+                throw new HazelcastException("Entry doesn't exist: " + key);
+            }
+        } else {
+            Object oldValue = entries.putIfAbsent(key, value);
+
+            if (oldValue != null && !ignoreOnExistenceConflict) {
+                throw new HazelcastException("Entry already exists: " + key);
+            }
+        }
+    }
+
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
-        System.out.println(">>> INTT");
         // No-op.
     }
 
@@ -93,17 +121,49 @@ public class ApMetadataStorage implements MetadataStorage, CoreService, ManagedS
 
     @Override
     public Operation getPreJoinOperation() {
-        // TODO: Share configs on pre-join
-        return null;
+        HashMap<Object, Object> entries0 = new HashMap<>(entries);
+
+        if (entries0.isEmpty()) {
+            return null;
+        }
+
+        return new ApMetadataPreJoinOperation(entries0);
     }
 
     @Override
     public Runnable prepareMergeRunnable() {
-        // TODO: Handle split-brain
-        return null;
+        HashMap<Object, Object> entries0 = new HashMap<>(entries);
+
+        if (entries0.isEmpty()) {
+            return null;
+        }
+
+        return new MergeRunnable(entries0);
     }
 
-    private void update(Object ket, Object value, boolean ignoreOnExistenceConflict) {
-        // TODO: Implement update
+    void addEntriesLocally(Map<Object, Object> remoteEntries) {
+        for (Map.Entry<Object, Object> entry : remoteEntries.entrySet()) {
+            entries.putIfAbsent(entry.getKey(), entry.getValue());
+        }
+    }
+
+    private void broadcast(Supplier<? extends Operation> operationSupplier) {
+        Future<Object> future = InvocationUtil.invokeOnStableClusterSerial(nodeEngine, operationSupplier, RETRY_COUNT);
+
+        FutureUtil.waitForever(singleton(future), FutureUtil.RETHROW_EVERYTHING);
+    }
+
+    private class MergeRunnable implements Runnable {
+
+        private final Map<Object, Object> entries;
+
+        public MergeRunnable(Map<Object, Object> entries) {
+            this.entries = entries;
+        }
+
+        @Override
+        public void run() {
+            broadcast(() -> new ApMetadataPreJoinOperation(entries));
+        }
     }
 }

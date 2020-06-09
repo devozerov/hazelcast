@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.metadata.ap;
+package com.hazelcast.metadata;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.function.PredicateEx;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
+import com.hazelcast.metadata.ap.MetadataStorageAp;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -74,8 +76,8 @@ public class MetadataStorageApTest {
 
         // Regular create
         getStore(member1).create(key, value1, false);
-        assertEquals(value1, getStore(member1).get(key));
-        assertEquals(value1, getStore(member2).get(key));
+        Assert.assertEquals(value1, getStore(member1).get(key));
+        Assert.assertEquals(value1, getStore(member2).get(key));
 
         // Create with without ignore flag
         try {
@@ -85,14 +87,14 @@ public class MetadataStorageApTest {
         } catch (HazelcastException e) {
             assertTrue(e.getMessage().startsWith("Entry already exists"));
 
-            assertEquals(value1, getStore(member1).get(key));
-            assertEquals(value1, getStore(member2).get(key));
+            Assert.assertEquals(value1, getStore(member1).get(key));
+            Assert.assertEquals(value1, getStore(member2).get(key));
         }
 
         // No-op on create with ignore flag
         getStore(member1).create(key, value1, true);
-        assertEquals(value1, getStore(member1).get(key));
-        assertEquals(value1, getStore(member2).get(key));
+        Assert.assertEquals(value1, getStore(member1).get(key));
+        Assert.assertEquals(value1, getStore(member2).get(key));
 
         // Drop
         getStore(member1).drop(key, false);
@@ -141,7 +143,7 @@ public class MetadataStorageApTest {
         assertEquals(value1, entries.get(key1));
         assertEquals(value2, entries.get(key2));
 
-        assertEquals(entries, getStore(member2).getWithFilter(filter));
+        Assert.assertEquals(entries, getStore(member2).getWithFilter(filter));
     }
 
     @Test
@@ -163,7 +165,7 @@ public class MetadataStorageApTest {
     }
 
     @SuppressWarnings("unused")
-    private static final class MetadataKey implements Serializable {
+    static final class MetadataKey implements Serializable {
 
         private int value;
 
@@ -171,11 +173,11 @@ public class MetadataStorageApTest {
             // No-op.
         }
 
-        private MetadataKey(int value) {
+        MetadataKey(int value) {
             this.value = value;
         }
 
-        private int getValue() {
+        int getValue() {
             return value;
         }
 
@@ -201,7 +203,7 @@ public class MetadataStorageApTest {
     }
 
     @SuppressWarnings("unused")
-    private static final class MetadataValue implements Serializable {
+    static final class MetadataValue implements Serializable {
 
         private int value;
 
@@ -209,11 +211,11 @@ public class MetadataStorageApTest {
             // No-op.
         }
 
-        private MetadataValue(int value) {
+        MetadataValue(int value) {
             this.value = value;
         }
 
-        private int getValue() {
+        int getValue() {
             return value;
         }
 

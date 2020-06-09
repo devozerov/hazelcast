@@ -58,14 +58,12 @@ public class MetadataStorageProxy implements MetadataStorage {
 
     @Override
     public void create(Object key, Object value, boolean ifNotExists) {
-        boolean ignoreConflict = !ifNotExists;
-        invocationManager.invoke(group, new UpdateOp(ignoreConflict, toData(key), toData(value))).joinInternal();
+        invocationManager.invoke(group, new UpdateOp(ifNotExists, toData(key), toData(value))).joinInternal();
     }
 
     @Override
     public void drop(Object key, boolean ifExists) {
-        boolean ignoreConflict = !ifExists;
-        invocationManager.invoke(group, new UpdateOp(ignoreConflict, toData(key), toData(null))).joinInternal();
+        invocationManager.invoke(group, new UpdateOp(ifExists, toData(key), toData(null))).joinInternal();
     }
 
     private Data toData(Object value) {

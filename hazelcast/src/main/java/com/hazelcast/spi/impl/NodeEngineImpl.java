@@ -50,6 +50,7 @@ import com.hazelcast.internal.util.ConcurrencyDetection;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.logging.impl.LoggingServiceImpl;
+import com.hazelcast.metadata.ap.MetadataStorageAp;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.ServiceNotFoundException;
 import com.hazelcast.spi.impl.eventservice.EventService;
@@ -114,6 +115,7 @@ public class NodeEngineImpl implements NodeEngine {
     private final EventServiceImpl eventService;
     private final OperationParkerImpl operationParker;
     private final ClusterWideConfigurationService configurationService;
+    private final MetadataStorageAp apMetadataStore;
     private final TransactionManagerServiceImpl transactionManagerService;
     private final WanReplicationService wanReplicationService;
     private final Consumer<Packet> packetDispatcher;
@@ -141,6 +143,7 @@ public class NodeEngineImpl implements NodeEngine {
             UserCodeDeploymentService userCodeDeploymentService = new UserCodeDeploymentService();
             DynamicConfigListener dynamicConfigListener = node.getNodeExtension().createDynamicConfigListener();
             this.configurationService = new ClusterWideConfigurationService(this, dynamicConfigListener);
+            this.apMetadataStore = new MetadataStorageAp(this);
             ClassLoader configClassLoader = node.getConfigClassLoader();
             if (configClassLoader instanceof UserCodeDeploymentClassLoader) {
                 ((UserCodeDeploymentClassLoader) configClassLoader).setUserCodeDeploymentService(userCodeDeploymentService);
@@ -164,6 +167,7 @@ public class NodeEngineImpl implements NodeEngine {
             serviceManager.registerService(OperationParker.SERVICE_NAME, operationParker);
             serviceManager.registerService(UserCodeDeploymentService.SERVICE_NAME, userCodeDeploymentService);
             serviceManager.registerService(ClusterWideConfigurationService.SERVICE_NAME, configurationService);
+            serviceManager.registerService(MetadataStorageAp.SERVICE_NAME, apMetadataStore);
         } catch (Throwable e) {
             try {
                 shutdown(true);
@@ -246,6 +250,11 @@ public class NodeEngineImpl implements NodeEngine {
 
     public ClusterWideConfigurationService getConfigurationService() {
         return configurationService;
+    }
+
+    @Override
+    public MetadataStorageAp getApMetadataStore() {
+        return apMetadataStore;
     }
 
     public ServiceManager getServiceManager() {
@@ -339,6 +348,8 @@ public class NodeEngineImpl implements NodeEngine {
     public TransactionManagerService getTransactionManagerService() {
         return transactionManagerService;
     }
+
+
 
     @Override
     public Data toData(Object object) {

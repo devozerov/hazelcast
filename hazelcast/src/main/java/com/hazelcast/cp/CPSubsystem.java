@@ -28,6 +28,7 @@ import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.cp.session.CPSession;
 import com.hazelcast.cp.session.CPSessionManagementService;
 import com.hazelcast.map.IMap;
+import com.hazelcast.metadata.MetadataStorage;
 
 import javax.annotation.Nonnull;
 import java.util.UUID;
@@ -483,6 +484,13 @@ public interface CPSubsystem {
      * @see SemaphoreConfig
      */
     @Nonnull ISemaphore getSemaphore(@Nonnull String name);
+
+    /**
+     * TODO
+     * @return
+     */
+    @Nonnull
+    MetadataStorage getMetadataStore();
 
     /**
      * Returns the local CP member if this Hazelcast member is part of

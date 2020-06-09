@@ -18,11 +18,9 @@ package com.hazelcast.cp.internal.datastructures.metadata.operation;
 
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftOp;
-import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRef;
-import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
 import com.hazelcast.cp.internal.datastructures.metadata.MetadataStorageCP;
 import com.hazelcast.cp.internal.datastructures.metadata.MetadataStoreCPService;
-import com.hazelcast.metadata.MetadataStorage;
+import com.hazelcast.internal.serialization.Data;
 
 public abstract class AbstractMetadataOp extends RaftOp {
 
@@ -36,4 +34,11 @@ public abstract class AbstractMetadataOp extends RaftOp {
         return MetadataStoreCPService.SERVICE_NAME;
     }
 
+    <T> T toObject(Data data) {
+        return getNodeEngine().getSerializationService().toObject(data);
+    }
+
+    Data toData(Object object) {
+        return getNodeEngine().getSerializationService().toData(object);
+    }
 }

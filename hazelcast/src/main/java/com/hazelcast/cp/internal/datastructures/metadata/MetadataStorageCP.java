@@ -16,14 +16,17 @@
 
 package com.hazelcast.cp.internal.datastructures.metadata;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.function.PredicateEx;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.metadata.MetadataStorage;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Predicate;
 
 // state for MetadataStorage
-public class MetadataStorageCP implements MetadataStorage {
+public class MetadataStorageCP {
 
     private final Map<Object, Object> entries = new HashMap<>();
 
@@ -31,8 +34,7 @@ public class MetadataStorageCP implements MetadataStorage {
         return entries.get(key);
     }
 
-    @Override
-    public Map<Object, Object> getWithFilter(PredicateEx<Object> filter) {
+    public Map<Object, Object> getWithFilter(Predicate<Object> filter) {
         Map<Object, Object> res = new HashMap<>();
         entries.forEach((k, v) -> {
             if (filter.test(k)) {
@@ -42,21 +44,19 @@ public class MetadataStorageCP implements MetadataStorage {
         return res;
     }
 
-    @Override
-    public void create(Object key, Object value, boolean ifNotExists) {
-        if (ifNotExists) {
-            entries.putIfAbsent(key, value);
+    public void update(Object key, Object value, boolean ignoreOnConflict) {
+        boolean drop = value == null;
+
+        if (drop) {
+            Object oldValue = entries.remove(key);
+            if (oldValue == null && !ignoreOnConflict) {
+                throw new HazelcastException("Entry doesn't exist: " + key);
+            }
         } else {
-            entries.put(key, value);
+            Object oldValue = entries.putIfAbsent(key, value);
+            if (oldValue != null && !ignoreOnConflict) {
+                throw new HazelcastException("Entry already exists: " + key);
+            }
         }
     }
-
-    @Override
-    public void drop(Object key, boolean ifExists) {
-        if (ifExists && !entries.containsKey(key))  {
-            throw new IllegalStateException(key + " was not present");
-        }
-        entries.remove(key);
-    }
-
 }

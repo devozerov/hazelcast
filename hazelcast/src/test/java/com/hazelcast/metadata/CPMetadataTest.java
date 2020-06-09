@@ -42,6 +42,12 @@ public class CPMetadataTest extends HazelcastRaftTestSupport {
             System.out.println(cpGroupId);
         }
 
+        for (int i = 0; i < 4096; i++) {
+            store.create("key-" +i, "value2", true);
+        }
+        System.out.println("Getting value: ");
+        System.out.println(store.get("key-1"));
+        System.out.println(store.getWithFilter(k -> true));
         Thread.currentThread().join();
     }
 }

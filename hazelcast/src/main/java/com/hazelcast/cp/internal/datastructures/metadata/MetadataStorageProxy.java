@@ -19,10 +19,10 @@ package com.hazelcast.cp.internal.datastructures.metadata;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.RaftInvocationManager;
 import com.hazelcast.cp.internal.RaftService;
-import com.hazelcast.cp.internal.datastructures.metadata.operation.CreateOp;
-import com.hazelcast.cp.internal.datastructures.metadata.operation.DropOp;
+import com.hazelcast.cp.internal.datastructures.metadata.operation.UpdateOp;
 import com.hazelcast.cp.internal.datastructures.metadata.operation.GetOp;
 import com.hazelcast.cp.internal.datastructures.metadata.operation.GetWithPredicateOp;
+import com.hazelcast.cp.internal.raft.QueryPolicy;
 import com.hazelcast.function.PredicateEx;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -47,26 +47,25 @@ public class MetadataStorageProxy implements MetadataStorage {
 
     @Override
     public Object get(Object key) {
-        Object response = invocationManager.invoke(group, new GetOp(toData(key))).joinInternal();
-        // TODO: deserialize
-        return response;
+        return invocationManager.query(group, new GetOp(toData(key)), QueryPolicy.LINEARIZABLE).joinInternal();
     }
 
     @Override
     public Map<Object, Object> getWithFilter(PredicateEx<Object> filter) {
         Object response = invocationManager.invoke(group, new GetWithPredicateOp(toData(filter))).joinInternal();
-        // TODO: deserialize
         return (Map<Object, Object>) response;
     }
 
     @Override
     public void create(Object key, Object value, boolean ifNotExists) {
-        invocationManager.invoke(group, new CreateOp(ifNotExists, toData(key), toData(value))).joinInternal();
+        boolean ignoreConflict = !ifNotExists;
+        invocationManager.invoke(group, new UpdateOp(ignoreConflict, toData(key), toData(value))).joinInternal();
     }
 
     @Override
     public void drop(Object key, boolean ifExists) {
-        invocationManager.invoke(group, new DropOp(ifExists, toData(key))).joinInternal();
+        boolean ignoreConflict = !ifExists;
+        invocationManager.invoke(group, new UpdateOp(ignoreConflict, toData(key), toData(null))).joinInternal();
     }
 
     private Data toData(Object value) {

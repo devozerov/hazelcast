@@ -16,13 +16,14 @@
 
 package com.hazelcast.cp.internal.datastructures.metadata;
 
+import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.RaftInvocationManager;
 import com.hazelcast.cp.internal.RaftService;
-import com.hazelcast.cp.internal.datastructures.metadata.operation.CreateOp;
-import com.hazelcast.cp.internal.datastructures.metadata.operation.DropOp;
+import com.hazelcast.cp.internal.datastructures.metadata.operation.UpdateOp;
 import com.hazelcast.cp.internal.datastructures.metadata.operation.GetOp;
 import com.hazelcast.cp.internal.datastructures.metadata.operation.GetWithPredicateOp;
+import com.hazelcast.cp.internal.raft.QueryPolicy;
 import com.hazelcast.function.PredicateEx;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -32,13 +33,13 @@ import com.hazelcast.spi.impl.NodeEngine;
 import java.util.Map;
 
 // proxy for MetadataStore
-public class MetadataStorageProxy implements MetadataStorage {
+public class MetadataStorageCpProxy implements MetadataStorage {
 
     private final RaftInvocationManager invocationManager;
     private final SerializationService serializationService;
     private RaftGroupId group;
 
-    public MetadataStorageProxy(NodeEngine nodeEngine, RaftGroupId group) {
+    public MetadataStorageCpProxy(NodeEngine nodeEngine, RaftGroupId group) {
         RaftService service = nodeEngine.getService(RaftService.SERVICE_NAME);
         this.invocationManager = service.getInvocationManager();
         this.serializationService = nodeEngine.getSerializationService();
@@ -47,29 +48,30 @@ public class MetadataStorageProxy implements MetadataStorage {
 
     @Override
     public Object get(Object key) {
-        Object response = invocationManager.invoke(group, new GetOp(toData(key))).joinInternal();
-        // TODO: deserialize
-        return response;
+        return invocationManager.query(group, new GetOp(toData(key)), QueryPolicy.LINEARIZABLE).joinInternal();
     }
 
     @Override
     public Map<Object, Object> getWithFilter(PredicateEx<Object> filter) {
-        Object response = invocationManager.invoke(group, new GetWithPredicateOp(toData(filter))).joinInternal();
-        // TODO: deserialize
+        Object response = invocationManager.query(group, new GetWithPredicateOp(toData(filter)), QueryPolicy.LINEARIZABLE).joinInternal();
         return (Map<Object, Object>) response;
     }
 
     @Override
     public void create(Object key, Object value, boolean ifNotExists) {
-        invocationManager.invoke(group, new CreateOp(ifNotExists, toData(key), toData(value))).joinInternal();
+        invocationManager.invoke(group, new UpdateOp(ifNotExists, toData(key), toData(value))).joinInternal();
     }
 
     @Override
     public void drop(Object key, boolean ifExists) {
-        invocationManager.invoke(group, new DropOp(ifExists, toData(key))).joinInternal();
+        invocationManager.invoke(group, new UpdateOp(ifExists, toData(key), toData(null))).joinInternal();
     }
 
     private Data toData(Object value) {
         return serializationService.toData(value);
+    }
+
+    public CPGroupId getGroupId() {
+        return group;
     }
 }

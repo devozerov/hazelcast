@@ -17,9 +17,7 @@
 package com.hazelcast.cp.internal.datastructures.metadata.operation;
 
 import com.hazelcast.cp.CPGroupId;
-import com.hazelcast.cp.internal.RaftOp;
-import com.hazelcast.cp.internal.RaftService;
-import com.hazelcast.cp.internal.datastructures.metadata.MetadataStoreCPService;
+import com.hazelcast.cp.internal.datastructures.metadata.MetadataStorageCp;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.ObjectDataInput;
@@ -31,14 +29,18 @@ public class GetOp extends AbstractMetadataOp {
 
     private Data key;
 
+    public GetOp() {
+    }
+
     public GetOp(Data key) {
         this.key = key;
     }
 
     @Override
     public Object run(CPGroupId groupId, long commitIndex) throws Exception {
+        MetadataStorageCp storage = getStorage(groupId);
+        return storage.get(toObject(key));
         // return the response here
-        return null;
     }
 
 

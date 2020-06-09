@@ -17,7 +17,7 @@
 package com.hazelcast.cp.internal.datastructures.metadata.operation;
 
 import com.hazelcast.cp.CPGroupId;
-import com.hazelcast.cp.internal.RaftOp;
+import com.hazelcast.cp.internal.datastructures.metadata.MetadataStorageCp;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.ObjectDataInput;
@@ -25,30 +25,40 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-public class DropOp extends AbstractMetadataOp {
+public class UpdateOp extends AbstractMetadataOp {
+
+    private boolean ignoreConflict;
 
     private Data key;
-    private boolean ifExists;
+    private Data value;
 
-    public DropOp(boolean ifExists, Data key) {
+    public UpdateOp() {
+    }
+
+    public UpdateOp(boolean ignoreConflict, Data key, Data value) {
+        this.ignoreConflict = ignoreConflict;
         this.key = key;
-        this.ifExists = ifExists;
+        this.value = value;
     }
 
     @Override
     public Object run(CPGroupId groupId, long commitIndex) throws Exception {
+        MetadataStorageCp storage = getStorage(groupId);
+        storage.update(toObject(key), toObject(value), ignoreConflict);
         return null;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeBoolean(ifExists);
+        out.writeBoolean(ignoreConflict);
         IOUtil.writeData(out, key);
+        IOUtil.writeData(out, value);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        ifExists = in.readBoolean();
+        ignoreConflict = in.readBoolean();
         key = IOUtil.readData(in);
+        value = IOUtil.readData(in);
     }
 }

@@ -16,6 +16,8 @@
 
 package com.hazelcast.metadata.ap;
 
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.function.PredicateEx;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -27,7 +29,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.Serializable;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -54,11 +62,179 @@ public class ApMetadataStorageTest {
     }
 
     @Test
-    public void test() {
+    public void testNonExistent() {
         assertNull(getStore(member1).get("not_exists"));
+    }
+
+    @Test
+    public void testCreateDrop() {
+        MetadataKey key = new MetadataKey(1);
+        MetadataValue value1 = new MetadataValue(2);
+        MetadataValue value2 = new MetadataValue(4);
+
+        // Regular create
+        getStore(member1).create(key, value1, false);
+        assertEquals(value1, getStore(member1).get(key));
+        assertEquals(value1, getStore(member2).get(key));
+
+        // Create with without ignore flag
+        try {
+            getStore(member1).create(key, value2, false);
+
+            fail("Must fail");
+        } catch (HazelcastException e) {
+            assertTrue(e.getMessage().startsWith("Entry already exists"));
+
+            assertEquals(value1, getStore(member1).get(key));
+            assertEquals(value1, getStore(member2).get(key));
+        }
+
+        // No-op on create with ignore flag
+        getStore(member1).create(key, value1, true);
+        assertEquals(value1, getStore(member1).get(key));
+        assertEquals(value1, getStore(member2).get(key));
+
+        // Drop
+        getStore(member1).drop(key, false);
+        assertNull(getStore(member1).get(key));
+        assertNull(getStore(member2).get(key));
+
+        // Drop without ignore flag.
+        try {
+            getStore(member1).drop(key, false);
+
+            fail("Must fail");
+        } catch (HazelcastException e) {
+            assertTrue(e.getMessage().startsWith("Entry doesn't exist"));
+        }
+
+        // Drop with ignore flag
+        getStore(member1).drop(key, true);
+    }
+
+    @Test
+    public void testGetWithFilter() {
+        MetadataKey key1 = new MetadataKey(1);
+        MetadataKey key2 = new MetadataKey(2);
+        MetadataKey key3 = new MetadataKey(3);
+        MetadataValue value1 = new MetadataValue(10);
+        MetadataValue value2 = new MetadataValue(20);
+        MetadataValue value3 = new MetadataValue(30);
+
+        getStore(member1).create(key1, value1, false);
+        getStore(member1).create(key2, value2, false);
+        getStore(member1).create(key3, value3, false);
+
+        PredicateEx<Object> filter = (PredicateEx<Object>) o -> {
+            if (o instanceof MetadataKey) {
+                MetadataKey key = (MetadataKey) o;
+
+                return key.getValue() == 1 || key.getValue() == 2;
+            }
+
+            return false;
+        };
+
+        Map<Object, Object> entries = getStore(member1).getWithFilter(filter);
+
+        assertEquals(2, entries.size());
+        assertEquals(value1, entries.get(key1));
+        assertEquals(value2, entries.get(key2));
+
+        assertEquals(entries, getStore(member2).getWithFilter(filter));
+    }
+
+    @Test
+    public void testPropagationOnJoin() {
+        MetadataKey key = new MetadataKey(1);
+        MetadataValue value = new MetadataValue(2);
+
+        getStore(member1).create(key, value, true);
+
+        HazelcastInstanceProxy member3 = (HazelcastInstanceProxy) factory.newHazelcastInstance();
+
+        MetadataValue restoredValue = (MetadataValue) getStore(member3).get(key);
+
+        assertEquals(value, restoredValue);
     }
 
     private ApMetadataStorage getStore(HazelcastInstanceProxy instance) {
         return instance.getOriginal().node.getNodeEngine().getApMetadataStore();
+    }
+
+    @SuppressWarnings("unused")
+    private static final class MetadataKey implements Serializable {
+
+        private int value;
+
+        private MetadataKey() {
+            // No-op.
+        }
+
+        private MetadataKey(int value) {
+            this.value = value;
+        }
+
+        private int getValue() {
+            return value;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            MetadataKey that = (MetadataKey) o;
+
+            return value == that.value;
+        }
+
+        @Override
+        public int hashCode() {
+            return value;
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private static final class MetadataValue implements Serializable {
+
+        private int value;
+
+        private MetadataValue() {
+            // No-op.
+        }
+
+        private MetadataValue(int value) {
+            this.value = value;
+        }
+
+        private int getValue() {
+            return value;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            MetadataValue value1 = (MetadataValue) o;
+
+            return value == value1.value;
+        }
+
+        @Override
+        public int hashCode() {
+            return value;
+        }
     }
 }

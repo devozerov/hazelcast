@@ -25,7 +25,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.metadata.MetadataStorage;
 import com.hazelcast.spi.impl.NodeEngine;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
@@ -33,8 +32,8 @@ import java.util.concurrent.TimeUnit;
 
 public class MetadataStorageCpService implements RaftManagedService, SnapshotAwareService<MetadataStorageCp> {
 
-    public static final String METADATA_STORE_GROUP_NAME = "__metadata_store@metadata_store";
-    public static final String SERVICE_NAME = "hz:raft:metadataStoreService";
+    public static final String METADATA_STORE_GROUP_NAME = "@metadata_storage";
+    public static final String SERVICE_NAME = "hz:raft:metadataStorageService";
 
     private final ILogger logger;
     private final NodeEngine nodeEngine;
@@ -64,6 +63,7 @@ public class MetadataStorageCpService implements RaftManagedService, SnapshotAwa
 
     private void registerMetadataStorage() {
         if (raftService.isCpSubsystemEnabled() && raftService.isDiscoveryCompleted()) {
+            logger.info("Registering CP Metadata Storage");
             getMetadataStorage(); //force creation of group
         } else {
             nodeEngine.getExecutionService().schedule(this::registerMetadataStorage, 1, TimeUnit.SECONDS);

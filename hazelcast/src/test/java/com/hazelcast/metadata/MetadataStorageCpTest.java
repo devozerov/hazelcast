@@ -19,7 +19,9 @@ package com.hazelcast.metadata;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.cp.CPGroup;
 import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.cp.CPSubsystemManagementService;
 import com.hazelcast.cp.exception.CPSubsystemException;
 import com.hazelcast.cp.internal.HazelcastRaftTestSupport;
 import com.hazelcast.cp.internal.datastructures.metadata.MetadataStorageCpProxy;
@@ -44,6 +46,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -64,6 +67,7 @@ public class MetadataStorageCpTest extends HazelcastRaftTestSupport {
         member1 = instances[0];
         member2 = instances[1];
         member3 = instances[2];
+
     }
 
     @Override
@@ -72,6 +76,15 @@ public class MetadataStorageCpTest extends HazelcastRaftTestSupport {
         config.getCPSubsystemConfig().getRaftAlgorithmConfig()
               .setCommitIndexAdvanceCountToSnapshot(SNAPSHOT_THRESHOLD);
         return config;
+    }
+
+    @Test
+    public void testCreateOnStart() {
+        assertTrueEventually(() -> {
+            CPSubsystemManagementService cp = member1.getCPSubsystem().getCPSubsystemManagementService();
+            CPGroup group = cp.getCPGroup("metadata_storage").toCompletableFuture().get();
+            assertNotNull("metadata_storage group is missing", group);
+        });
     }
 
     @Test

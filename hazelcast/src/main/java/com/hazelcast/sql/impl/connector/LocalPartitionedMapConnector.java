@@ -40,7 +40,7 @@ import static java.util.stream.Collectors.toList;
 // TODO: do we want to keep it? maps are auto discovered...
 public class LocalPartitionedMapConnector extends SqlKeyValueConnector {
 
-    public static final String TYPE_NAME = "com.hazelcast.LocalPartitionedMap";
+    public static final String TYPE_NAME = "local_imap";
 
     @Override
     public String typeName() {

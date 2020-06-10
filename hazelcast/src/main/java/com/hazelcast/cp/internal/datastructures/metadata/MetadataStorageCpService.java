@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 public class MetadataStorageCpService implements RaftManagedService, SnapshotAwareService<MetadataStorageCp> {
 
@@ -42,7 +43,6 @@ public class MetadataStorageCpService implements RaftManagedService, SnapshotAwa
 
     private RaftService raftService;
 
-
     public MetadataStorageCpService(NodeEngine nodeEngine) {
         this.logger = nodeEngine.getLogger(getClass().getName());
         this.nodeEngine = nodeEngine;
@@ -50,36 +50,42 @@ public class MetadataStorageCpService implements RaftManagedService, SnapshotAwa
 
     @Override
     public void onCPSubsystemRestart() {
-
+        storage.clear();
     }
 
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
         this.raftService = nodeEngine.getService(RaftService.SERVICE_NAME);
 
-        if (this.raftService.isCpSubsystemEnabled()) {
-            // TODO: create the store on startup
+        if (raftService.isCpSubsystemEnabled()) {
+            nodeEngine.getExecutionService().schedule(this::registerMetadataStorage, 1, TimeUnit.SECONDS);
         }
     }
 
-    public MetadataStorage getMetadataStore() {
+    private void registerMetadataStorage() {
+        if (raftService.isCpSubsystemEnabled() && raftService.isDiscoveryCompleted()) {
+            getMetadataStorage(); //force creation of group
+        } else {
+            nodeEngine.getExecutionService().schedule(this::registerMetadataStorage, 1, TimeUnit.SECONDS);
+        }
+    }
+
+    public MetadataStorage getMetadataStorage() {
         RaftGroupId group = this.raftService.createRaftGroupForProxy(METADATA_STORE_GROUP_NAME);
         return new MetadataStorageCpProxy(this.nodeEngine, group);
     }
 
-    public MetadataStorageCp getMetadataStoreState(CPGroupId groupId) {
+    public MetadataStorageCp getMetadataStorageState(CPGroupId groupId) {
         return storage.computeIfAbsent(groupId, key -> new MetadataStorageCp());
     }
 
     @Override
     public MetadataStorageCp takeSnapshot(CPGroupId groupId, long commitIndex) {
-        System.out.println("Taking snapshot");
         return new MetadataStorageCp(storage.get(groupId));
     }
 
     @Override
     public void restoreSnapshot(CPGroupId groupId, long commitIndex, MetadataStorageCp snapshot) {
-        System.out.println("Restoring snapshot");
         storage.put(groupId, new MetadataStorageCp(snapshot));
     }
 

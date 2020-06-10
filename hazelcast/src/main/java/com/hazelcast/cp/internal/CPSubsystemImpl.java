@@ -110,7 +110,7 @@ public class CPSubsystemImpl implements CPSubsystem {
     @Override
     public MetadataStorage getMetadataStore() {
         MetadataStorageCpService service = getService(MetadataStorageCpService.SERVICE_NAME);
-        return service.getMetadataStore();
+        return service.getMetadataStorage();
     }
 
     @Override

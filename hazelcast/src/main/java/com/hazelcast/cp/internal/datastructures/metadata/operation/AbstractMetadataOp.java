@@ -26,7 +26,7 @@ public abstract class AbstractMetadataOp extends RaftOp {
 
     MetadataStorageCp getStorage(CPGroupId groupId) {
         MetadataStorageCpService service = getService();
-        return service.getMetadataStoreState(groupId);
+        return service.getMetadataStorageState(groupId);
     }
 
     @Override

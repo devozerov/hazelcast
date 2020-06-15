@@ -32,9 +32,9 @@ public class Runner {
     }
 
     private static void processCommand(HazelcastInstance instance, String command) throws Exception {
-        if (command.toLowerCase().equals("quit")) {
+        if (command.toLowerCase().equals("!quit")) {
             System.exit(-1);
-        } else if (command.toLowerCase().equals("show tables")) {
+        } else if (command.toLowerCase().equals("!show tables")) {
             processShowTables(instance);
         } else {
             processQuery(instance, command);

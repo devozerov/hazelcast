@@ -78,24 +78,25 @@ public class SqlReplicatedMapTest extends SqlTestSupport {
 
     @Test
     public void testSql_direct() {
-        checkSql(false);
-    }
-
-    @Test
-    public void testSql_index() {
-        checkSql(true);
-    }
-
-    private void checkSql(boolean useIndex) {
         ReplicatedMap<Integer, Integer> map = member1.getReplicatedMap(MAP_NAME);
 
         map.put(1, 1);
         map.put(2, 2);
         map.put(3, 3);
 
-        if (useIndex) {
-            map.addIndex(new IndexConfig().setName("idx_this").addAttribute("this"));
-        }
+        checkSql(member1);
+        checkSql(member2);
+    }
+
+    @Test
+    public void testSql_index() {
+        ReplicatedMap<Integer, Integer> map = member1.getReplicatedMap(MAP_NAME);
+
+        map.put(1, 1);
+        map.put(2, 2);
+        map.put(3, 3);
+
+        map.addIndex(new IndexConfig().setName("idx_this").addAttribute("this"));
 
         checkSql(member1);
         checkSql(member2);

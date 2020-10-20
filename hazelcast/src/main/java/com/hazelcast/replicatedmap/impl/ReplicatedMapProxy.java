@@ -16,6 +16,7 @@
 
 package com.hazelcast.replicatedmap.impl;
 
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.internal.monitor.impl.EmptyLocalReplicatedMapStats;
@@ -503,6 +504,11 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
             stats = EMPTY_LOCAL_MAP_STATS;
         }
         return stats;
+    }
+
+    @Override
+    public void addIndex(IndexConfig indexConfig) {
+        throw new UnsupportedOperationException();
     }
 
     private void ensureNoSplitBrain(SplitBrainProtectionOn requiredSplitBrainProtectionPermissionType) {

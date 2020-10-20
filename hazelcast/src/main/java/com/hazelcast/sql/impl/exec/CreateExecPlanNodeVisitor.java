@@ -301,7 +301,8 @@ public class CreateExecPlanNodeVisitor implements PlanNodeVisitor {
                     node.getIndexName(),
                     node.getIndexComponentCount(),
                     node.getIndexFilter(),
-                    node.getConverterTypes()
+                    node.getConverterTypes(),
+                    node.isReplicated()
                 );
             }
         }

@@ -1,5 +1,6 @@
 package com.hazelcast.replicatedmap.projectx;
 
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -181,6 +182,11 @@ public class ReplicatedMapNew<K, V> implements ReplicatedMap<K, V> {
     @Override
     public boolean containsValue(Object value) {
         return values().contains(value);
+    }
+
+    @Override
+    public void addIndex(IndexConfig indexConfig) {
+        delegate.addIndex(indexConfig);
     }
 
     @NotNull

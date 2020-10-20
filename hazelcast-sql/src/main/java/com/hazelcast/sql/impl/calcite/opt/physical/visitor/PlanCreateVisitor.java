@@ -244,7 +244,8 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             rel.getIndex().getComponentsCount(),
             rel.getIndexFilter(),
             rel.getConverterTypes(),
-            convertFilter(schemaBefore, rel.getRemainderExp())
+            convertFilter(schemaBefore, rel.getRemainderExp()),
+            table instanceof ReplicatedMapTable
         );
 
         pushUpstream(scanNode);

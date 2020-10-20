@@ -40,6 +40,7 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode implements Ide
     private int indexComponentCount;
     private IndexFilter indexFilter;
     private List<QueryDataType> converterTypes;
+    private boolean replicated;
 
     public MapIndexScanPlanNode() {
         // No-op.
@@ -68,6 +69,30 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode implements Ide
         this.converterTypes = converterTypes;
     }
 
+    public MapIndexScanPlanNode(
+        int id,
+        String mapName,
+        QueryTargetDescriptor keyDescriptor,
+        QueryTargetDescriptor valueDescriptor,
+        List<QueryPath> fieldPaths,
+        List<QueryDataType> fieldTypes,
+        List<Integer> projects,
+        String indexName,
+        int indexComponentCount,
+        IndexFilter indexFilter,
+        List<QueryDataType> converterTypes,
+        Expression<Boolean> remainderFilter,
+        boolean replicated
+    ) {
+        super(id, mapName, keyDescriptor, valueDescriptor, fieldPaths, fieldTypes, projects, remainderFilter);
+
+        this.indexName = indexName;
+        this.indexComponentCount = indexComponentCount;
+        this.indexFilter = indexFilter;
+        this.converterTypes = converterTypes;
+        this.replicated = replicated;
+    }
+
     public String getIndexName() {
         return indexName;
     }
@@ -82,6 +107,10 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode implements Ide
 
     public List<QueryDataType> getConverterTypes() {
         return converterTypes;
+    }
+
+    public boolean isReplicated() {
+        return replicated;
     }
 
     @Override
@@ -107,6 +136,7 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode implements Ide
         out.writeInt(indexComponentCount);
         out.writeObject(indexFilter);
         SerializationUtil.writeList(converterTypes, out);
+        out.writeBoolean(replicated);
     }
 
     @Override
@@ -117,6 +147,7 @@ public class MapIndexScanPlanNode extends AbstractMapScanPlanNode implements Ide
         indexComponentCount = in.readInt();
         indexFilter = in.readObject();
         converterTypes = SerializationUtil.readList(in);
+        replicated = in.readBoolean();
     }
 
     @Override

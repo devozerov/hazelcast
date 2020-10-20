@@ -16,6 +16,7 @@
 
 package com.hazelcast.replicatedmap;
 
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryListener;
@@ -253,4 +254,5 @@ public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
     @Nonnull
     LocalReplicatedMapStats getReplicatedMapStats();
 
+    void addIndex(IndexConfig indexConfig);
 }

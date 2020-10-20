@@ -16,8 +16,11 @@
 
 package com.hazelcast.sql.projectx;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.replicatedmap.ReplicatedMap;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlTestInstanceFactory;
@@ -42,8 +45,10 @@ public class SqlReplicatedMapTest extends SqlTestSupport {
 
     @Before
     public void before() {
-        member1 = factory.newHazelcastInstance();
-        member2 = factory.newHazelcastInstance();
+        Config config = smallInstanceConfig().setProperty(ClusterProperty.PARTITION_COUNT.getName(), "2");
+
+        member1 = factory.newHazelcastInstance(config);
+        member2 = factory.newHazelcastInstance(config);
     }
 
     @After
@@ -53,32 +58,44 @@ public class SqlReplicatedMapTest extends SqlTestSupport {
 
     @Test
     public void testBase() {
-        ReplicatedMap<Integer, Integer> rmap1 = member1.getReplicatedMap(MAP_NAME);
-        rmap1.put(1, 1);
-        Integer value1 = rmap1.get(1);
+        ReplicatedMap<Integer, Integer> map1 = member1.getReplicatedMap(MAP_NAME);
+        map1.put(1, 1);
+        Integer value1 = map1.get(1);
         assertEquals(Integer.valueOf(1), value1);
 
-        ReplicatedMap<Integer, Integer> rmap2 = member2.getReplicatedMap(MAP_NAME);
-        Integer value2 = rmap2.get(1);
+        ReplicatedMap<Integer, Integer> map2 = member2.getReplicatedMap(MAP_NAME);
+        Integer value2 = map2.get(1);
         assertEquals(Integer.valueOf(1), value2);
 
-        assertEquals(1, rmap1.size());
-        assertEquals(1, rmap2.size());
+        assertEquals(1, map1.size());
+        assertEquals(1, map2.size());
 
-        rmap1.clear();
+        map1.clear();
 
-        assertEquals(0, rmap1.size());
-        assertEquals(0, rmap2.size());
+        assertEquals(0, map1.size());
+        assertEquals(0, map2.size());
     }
 
     @Test
-    public void testSql() {
-        ReplicatedMap<Integer, Integer> rmap1 = member1.getReplicatedMap(MAP_NAME);
-        ReplicatedMap<Integer, Integer> rmap2 = member2.getReplicatedMap(MAP_NAME);
+    public void testSql_direct() {
+        checkSql(false);
+    }
 
-        rmap1.put(1, 1);
-        rmap1.put(2, 2);
-        rmap1.put(3, 3);
+    @Test
+    public void testSql_index() {
+        checkSql(true);
+    }
+
+    private void checkSql(boolean useIndex) {
+        ReplicatedMap<Integer, Integer> map = member1.getReplicatedMap(MAP_NAME);
+
+        map.put(1, 1);
+        map.put(2, 2);
+        map.put(3, 3);
+
+        if (useIndex) {
+            map.addIndex(new IndexConfig().setName("idx_this").addAttribute("this"));
+        }
 
         checkSql(member1);
         checkSql(member2);

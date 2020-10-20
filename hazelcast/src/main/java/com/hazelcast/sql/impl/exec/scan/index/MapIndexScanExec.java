@@ -43,6 +43,7 @@ public class MapIndexScanExec extends MapScanExec {
     private final IndexFilter indexFilter;
     private final List<QueryDataType> converterTypes;
     private final int componentCount;
+    private final boolean replicated;
 
     private InternalIndex index;
 
@@ -83,6 +84,46 @@ public class MapIndexScanExec extends MapScanExec {
         this.componentCount = componentCount;
         this.indexFilter = indexFilter;
         this.converterTypes = converterTypes;
+
+        replicated = false;
+    }
+
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    public MapIndexScanExec(
+        int id,
+        MapContainer map,
+        PartitionIdSet parts,
+        QueryTargetDescriptor keyDescriptor,
+        QueryTargetDescriptor valueDescriptor,
+        List<QueryPath> fieldPaths,
+        List<QueryDataType> fieldTypes,
+        List<Integer> projects,
+        Expression<Boolean> filter,
+        InternalSerializationService serializationService,
+        String indexName,
+        int componentCount,
+        IndexFilter indexFilter,
+        List<QueryDataType> converterTypes,
+        boolean replicated
+    ) {
+        super(
+            id,
+            map,
+            parts,
+            keyDescriptor,
+            valueDescriptor,
+            fieldPaths,
+            fieldTypes,
+            projects,
+            filter,
+            serializationService
+        );
+
+        this.indexName = indexName;
+        this.componentCount = componentCount;
+        this.indexFilter = indexFilter;
+        this.converterTypes = converterTypes;
+        this.replicated = replicated;
     }
 
     @Override
@@ -108,10 +149,12 @@ public class MapIndexScanExec extends MapScanExec {
         }
 
         // Make sure that required partitions are indexed
-        partitionStamp = index.getPartitionStamp(partitions);
+        if (!replicated) {
+            partitionStamp = index.getPartitionStamp(partitions);
 
-        if (partitionStamp == GlobalIndexPartitionTracker.STAMP_INVALID) {
-            throw invalidIndexStamp();
+            if (partitionStamp == GlobalIndexPartitionTracker.STAMP_INVALID) {
+                throw invalidIndexStamp();
+            }
         }
 
         return new MapIndexScanExecIterator(mapName, index, componentCount, indexFilter, converterTypes, ctx);
@@ -119,8 +162,10 @@ public class MapIndexScanExec extends MapScanExec {
 
     @Override
     protected void validateConsistency() {
-        if (!index.validatePartitionStamp(partitionStamp)) {
-            throw invalidIndexStamp();
+        if (!replicated) {
+            if (!index.validatePartitionStamp(partitionStamp)) {
+                throw invalidIndexStamp();
+            }
         }
     }
 

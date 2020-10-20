@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.proxy;
 
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.ListenerConfig;
@@ -1306,10 +1307,25 @@ abstract class MapProxySupport<K, V>
         IndexConfig indexConfig0 = IndexUtils.validateAndNormalize(name, indexConfig);
 
         try {
-            AddIndexOperation addIndexOperation = new AddIndexOperation(name, indexConfig0);
+            if (replicated) {
+                for (Member member : getNodeEngine().getClusterService().getMembers()) {
+                    for (int i = 0; i < partitionService.getPartitionCount(); i++) {
+                        AddIndexOperation operation = new AddIndexOperation(name, indexConfig0);
+                        operation.setReplicatedPartition(i);
 
-            operationService.invokeOnAllPartitions(SERVICE_NAME,
-                    new BinaryOperationFactory(addIndexOperation, getNodeEngine()));
+                        System.out.println(">>> INDEX BEFORE: " + member.getUuid() + " -> " + i);
+                        operationService.invokeOnTarget(SERVICE_NAME, operation, member.getAddress()).get();
+                        System.out.println(">>> INDEX AFTER : " + member.getUuid() + " -> " + i);
+                    }
+                }
+            } else {
+                AddIndexOperation addIndexOperation = new AddIndexOperation(name, indexConfig0);
+
+                operationService.invokeOnAllPartitions(
+                    SERVICE_NAME,
+                    new BinaryOperationFactory(addIndexOperation, getNodeEngine())
+                );
+            }
         } catch (Throwable t) {
             throw rethrow(t);
         }

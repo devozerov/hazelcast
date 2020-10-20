@@ -42,6 +42,7 @@ public class AddIndexOperation extends MapOperation
      * Configuration of the index.
      */
     private IndexConfig config;
+    private int replicatedPartition;
 
     public AddIndexOperation() {
         // No-op.
@@ -55,7 +56,7 @@ public class AddIndexOperation extends MapOperation
 
     @Override
     public boolean shouldBackup() {
-        return mapContainer.getTotalBackupCount() > 0;
+        return !mapContainer.isReplicated() && mapContainer.getTotalBackupCount() > 0;
     }
 
     @Override
@@ -78,9 +79,25 @@ public class AddIndexOperation extends MapOperation
         return MapService.SERVICE_NAME;
     }
 
+    public void setReplicatedPartition(int replicatedPartition) {
+        this.replicatedPartition = replicatedPartition;
+    }
+
     @Override
     public void runInternal() {
-        int partitionId = getPartitionId();
+        int partitionId;
+
+        if (mapContainer.isReplicated()) {
+            partitionId = replicatedPartition;
+
+            recordStore = mapContainer.getMapServiceContext().getRecordStore(replicatedPartition, name);
+
+            if (recordStore == null) {
+                return;
+            }
+        } else {
+            partitionId = getPartitionId();
+        }
 
         Indexes indexes = mapContainer.getIndexes(partitionId);
         RecordStoreAdapter recordStoreAdapter = new RecordStoreAdapter(recordStore);
@@ -113,12 +130,14 @@ public class AddIndexOperation extends MapOperation
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(config);
+        out.writeInt(replicatedPartition);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         config = in.readObject();
+        replicatedPartition = in.readInt();
     }
 
     @Override

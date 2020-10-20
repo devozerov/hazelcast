@@ -40,6 +40,7 @@ import com.hazelcast.client.impl.spi.ClientProxy;
 import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.EntryEvent;
@@ -463,6 +464,11 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         ClientMessage request = ReplicatedMapEntrySetCodec.encodeRequest(name);
         ClientMessage response = invokeOnPartition(request, targetPartitionId);
         return (Set) new UnmodifiableLazySet(ReplicatedMapEntrySetCodec.decodeResponse(response), getSerializationService());
+    }
+
+    @Override
+    public void addIndex(IndexConfig indexConfig) {
+        throw new UnsupportedOperationException();
     }
 
     public UUID addNearCacheInvalidationListener(EventHandler handler) {

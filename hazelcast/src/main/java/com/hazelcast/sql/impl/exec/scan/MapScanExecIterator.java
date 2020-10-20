@@ -36,6 +36,7 @@ public class MapScanExecIterator implements KeyValueIterator {
 
     private final MapContainer map;
     private final Iterator<Integer> partsIterator;
+    private final boolean replicated;
     private final long now = Clock.currentTimeMillis();
 
     private RecordStore currentRecordStore;
@@ -46,9 +47,10 @@ public class MapScanExecIterator implements KeyValueIterator {
     private Data nextKey;
     private Object nextValue;
 
-    public MapScanExecIterator(MapContainer map, Iterator<Integer> partsIterator) {
+    public MapScanExecIterator(MapContainer map, Iterator<Integer> partsIterator, boolean replicated) {
         this.map = map;
         this.partsIterator = partsIterator;
+        this.replicated = replicated;
 
         advance0();
     }
@@ -88,13 +90,15 @@ public class MapScanExecIterator implements KeyValueIterator {
                 } else {
                     int nextPart = partsIterator.next();
 
-                    boolean isOwned = map.getMapServiceContext().getOrInitCachedMemberPartitions().contains(nextPart);
+                    if (!replicated) {
+                        boolean isOwned = map.getMapServiceContext().getOrInitCachedMemberPartitions().contains(nextPart);
 
-                    if (!isOwned) {
-                        throw QueryException.error(
-                            SqlErrorCode.PARTITION_DISTRIBUTION,
-                            "Partition is not owned by member: " + nextPart
-                        ).markInvalidate();
+                        if (!isOwned) {
+                            throw QueryException.error(
+                                SqlErrorCode.PARTITION_DISTRIBUTION,
+                                "Partition is not owned by member: " + nextPart
+                            ).markInvalidate();
+                        }
                     }
 
                     currentRecordStore = map.getMapServiceContext().getRecordStore(nextPart, map.getName());

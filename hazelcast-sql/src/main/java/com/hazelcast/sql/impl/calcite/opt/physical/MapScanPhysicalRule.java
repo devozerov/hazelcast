@@ -21,8 +21,10 @@ import com.hazelcast.sql.impl.calcite.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTrait;
 import com.hazelcast.sql.impl.calcite.opt.logical.MapScanLogicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.index.IndexResolver;
+import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
+import com.hazelcast.sql.impl.schema.map.ReplicatedMapTable;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.RelNode;
@@ -49,9 +51,56 @@ public final class MapScanPhysicalRule extends RelOptRule {
     public void onMatch(RelOptRuleCall call) {
         MapScanLogicalRel scan = call.rel(0);
 
-        PartitionedMapTable table = (PartitionedMapTable) scan.getMap();
+        AbstractMapTable table = scan.getMap();
 
+        if (table instanceof PartitionedMapTable) {
+            processPartitioned(call, scan, (PartitionedMapTable) table);
+        } else if (table instanceof ReplicatedMapTable) {
+            processReplicated(call, scan, (ReplicatedMapTable) table);
+        }
+    }
+
+    private void processPartitioned(RelOptRuleCall call, MapScanLogicalRel scan, PartitionedMapTable table) {
         DistributionTrait distribution = OptUtils.getDistributionDef(scan).getTraitPartitionedUnknown();
+
+        List<RelNode> transforms = new ArrayList<>(1);
+
+        MapScanPhysicalRel mapScan = new MapScanPhysicalRel(
+            scan.getCluster(),
+            OptUtils.toPhysicalConvention(scan.getTraitSet(), distribution),
+            scan.getTable()
+        );
+
+        if (!table.isHd()) {
+            // Add normal map scan. For HD, Map scan is not supported
+            transforms.add(mapScan);
+        }
+
+        // Try adding index scans.
+        List<MapTableIndex> indexes = table.getIndexes();
+        List<RelNode> indexScans = IndexResolver.createIndexScans(scan, distribution, indexes);
+        transforms.addAll(indexScans);
+
+        if (transforms.isEmpty() && table.isHd()) {
+            // No transforms created so far for HD, try using the index scan.
+            RelNode indexScan = createFullIndexScan(scan, distribution, indexes);
+
+            if (indexScan != null) {
+                transforms.add(indexScan);
+            } else {
+                // Failed to create any index-based access path for HD. Add standard map scan. It will fail during plan
+                // creation with proper exception.
+                transforms.add(mapScan);
+            }
+        }
+
+        for (RelNode transform : transforms) {
+            call.transformTo(transform);
+        }
+    }
+
+    private void processReplicated(RelOptRuleCall call, MapScanLogicalRel scan, ReplicatedMapTable table) {
+        DistributionTrait distribution = OptUtils.getDistributionDef(scan).getTraitReplicated();
 
         List<RelNode> transforms = new ArrayList<>(1);
 

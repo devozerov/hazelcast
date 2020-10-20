@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.plan.node;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -23,12 +25,16 @@ import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
  * Node to scan a partitioned map.
  */
 public class MapScanPlanNode extends AbstractMapScanPlanNode implements IdentifiedDataSerializable {
+
+    private boolean replicated;
+
     public MapScanPlanNode() {
         // No-op.
     }
@@ -46,6 +52,22 @@ public class MapScanPlanNode extends AbstractMapScanPlanNode implements Identifi
         super(id, mapName, keyDescriptor, valueDescriptor, fieldPaths, fieldTypes, projects, filter);
     }
 
+    public MapScanPlanNode(
+        int id,
+        String mapName,
+        QueryTargetDescriptor keyDescriptor,
+        QueryTargetDescriptor valueDescriptor,
+        List<QueryPath> fieldPaths,
+        List<QueryDataType> fieldTypes,
+        List<Integer> projects,
+        Expression<Boolean> filter,
+        boolean replicated
+    ) {
+        super(id, mapName, keyDescriptor, valueDescriptor, fieldPaths, fieldTypes, projects, filter);
+
+        this.replicated = replicated;
+    }
+
     @Override
     public void visit(PlanNodeVisitor visitor) {
         visitor.onMapScanNode(this);
@@ -59,6 +81,24 @@ public class MapScanPlanNode extends AbstractMapScanPlanNode implements Identifi
     @Override
     public int getClassId() {
         return SqlDataSerializerHook.NODE_MAP_SCAN;
+    }
+
+    public boolean isReplicated() {
+        return replicated;
+    }
+
+    @Override
+    protected void writeData0(ObjectDataOutput out) throws IOException {
+        super.writeData0(out);
+
+        out.writeBoolean(replicated);
+    }
+
+    @Override
+    protected void readData0(ObjectDataInput in) throws IOException {
+        super.readData0(in);
+
+        replicated = in.readBoolean();
     }
 
     @Override

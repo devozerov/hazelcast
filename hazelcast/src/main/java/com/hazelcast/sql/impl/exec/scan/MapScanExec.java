@@ -34,6 +34,7 @@ public class MapScanExec extends AbstractMapScanExec {
 
     protected final MapContainer map;
     protected final PartitionIdSet partitions;
+    protected final boolean replicated;
 
     public MapScanExec(
         int id,
@@ -51,6 +52,28 @@ public class MapScanExec extends AbstractMapScanExec {
 
         this.map = map;
         this.partitions = partitions;
+
+        replicated = false;
+    }
+
+    public MapScanExec(
+        int id,
+        MapContainer map,
+        PartitionIdSet partitions,
+        QueryTargetDescriptor keyDescriptor,
+        QueryTargetDescriptor valueDescriptor,
+        List<QueryPath> fieldPaths,
+        List<QueryDataType> fieldTypes,
+        List<Integer> projects,
+        Expression<Boolean> filter,
+        InternalSerializationService serializationService,
+        boolean replicated
+    ) {
+        super(id, map.getName(), keyDescriptor, valueDescriptor, fieldPaths, fieldTypes, projects, filter, serializationService);
+
+        this.map = map;
+        this.partitions = partitions;
+        this.replicated = replicated;
     }
 
     @Override
@@ -70,7 +93,7 @@ public class MapScanExec extends AbstractMapScanExec {
 
     @Override
     protected KeyValueIterator createIterator() {
-        return MapScanExecUtils.createIterator(map, partitions);
+        return MapScanExecUtils.createIterator(map, partitions, replicated);
     }
 
     @Override

@@ -32,7 +32,17 @@ public final class MapScanExecUtils {
         return map.getExtractors();
     }
 
-    public static MapScanExecIterator createIterator(MapContainer map, PartitionIdSet parts) {
-        return new MapScanExecIterator(map, parts.iterator());
+    public static MapScanExecIterator createIterator(MapContainer map, PartitionIdSet parts, boolean replicated) {
+        if (replicated) {
+            PartitionIdSet parts0 = new PartitionIdSet(parts.getPartitionCount());
+
+            for (int i = 0; i < parts.getPartitionCount(); i++) {
+                parts0.add(i);
+            }
+
+            parts = parts0;
+        }
+
+        return new MapScanExecIterator(map, parts.iterator(), replicated);
     }
 }

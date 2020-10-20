@@ -49,14 +49,14 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.spi.properties.ClusterProperty.GLOBAL_HD_INDEX_ENABLED;
-import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PARTITIONED;
+import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_REPLICATED;
 
-public class PartitionedMapTableResolver extends AbstractMapTableResolver {
+public class ReplicatedMapTableResolver extends AbstractMapTableResolver {
 
     private static final List<List<String>> SEARCH_PATHS =
-        Collections.singletonList(Arrays.asList(QueryUtils.CATALOG, SCHEMA_NAME_PARTITIONED));
+        Collections.singletonList(Arrays.asList(QueryUtils.CATALOG, SCHEMA_NAME_REPLICATED));
 
-    public PartitionedMapTableResolver(NodeEngine nodeEngine, JetMapMetadataResolver jetMapMetadataResolver) {
+    public ReplicatedMapTableResolver(NodeEngine nodeEngine, JetMapMetadataResolver jetMapMetadataResolver) {
         super(nodeEngine, jetMapMetadataResolver, SEARCH_PATHS);
     }
 
@@ -70,7 +70,7 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
 
         // Get started maps.
         for (String mapName : context.getMapContainers().keySet()) {
-            PartitionedMapTable table = createTable(nodeEngine, context, mapName);
+            ReplicatedMapTable table = createTable(nodeEngine, context, mapName);
 
             if (table == null) {
                 continue;
@@ -84,7 +84,7 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
         for (Map.Entry<String, MapConfig> configEntry : nodeEngine.getConfig().getMapConfigs().entrySet()) {
             String configMapName = configEntry.getKey();
 
-            if (configEntry.getValue().getBackupCount() == Integer.MAX_VALUE) {
+            if (configEntry.getValue().getBackupCount() != Integer.MAX_VALUE) {
                 continue;
             }
 
@@ -101,7 +101,7 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
         return res;
     }
 
-    private PartitionedMapTable createTable(
+    private ReplicatedMapTable createTable(
         NodeEngine nodeEngine,
         MapServiceContext context,
         String name
@@ -114,7 +114,7 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
                 return null;
             }
 
-            if (mapContainer.isReplicated()) {
+            if (!mapContainer.isReplicated()) {
                 return null;
             }
 
@@ -145,8 +145,8 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
             List<MapTableIndex> indexes = MapTableUtils.getPartitionedMapIndexes(mapContainer, fields);
 
             // Done.
-            return new PartitionedMapTable(
-                SCHEMA_NAME_PARTITIONED,
+            return new ReplicatedMapTable(
+                SCHEMA_NAME_REPLICATED,
                 name,
                 name,
                 fields,
@@ -159,11 +159,11 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
                 hd
             );
         } catch (QueryException e) {
-            return new PartitionedMapTable(name, e);
+            return new ReplicatedMapTable(name, e);
         } catch (Exception e) {
-            QueryException e0 = QueryException.error("Failed to get metadata for IMap " + name + ": " + e.getMessage(), e);
+            QueryException e0 = QueryException.error("Failed to get metadata for ReplicatedMap " + name + ": " + e.getMessage(), e);
 
-            return new PartitionedMapTable(name, e0);
+            return new ReplicatedMapTable(name, e0);
         }
     }
 
@@ -218,23 +218,23 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
         return getFieldMetadata(entry.getKey(), entry.getValue());
     }
 
-    private static PartitionedMapTable emptyError(String mapName) {
+    private static ReplicatedMapTable emptyError(String mapName) {
         QueryException error = QueryException.error(
-            "Cannot resolve IMap schema because it doesn't have entries on the local member: " + mapName
+            "Cannot resolve ReplicatedMap schema because it doesn't have entries on the local member: " + mapName
         );
 
-        return new PartitionedMapTable(mapName, error);
+        return new ReplicatedMapTable(mapName, error);
     }
 
-    private static PartitionedMapTable hdError(String mapName) {
-        QueryException error = QueryException.error("Cannot query the IMap \"" + mapName
+    private static ReplicatedMapTable hdError(String mapName) {
+        QueryException error = QueryException.error("Cannot query the ReplicatedMap \"" + mapName
             + "\" with InMemoryFormat.NATIVE because it does not have global indexes "
-            + "(please make sure that the IMap has at least one index "
+            + "(please make sure that the ReplicatedMap has at least one index "
             + "and the property \"" + ClusterProperty.GLOBAL_HD_INDEX_ENABLED.getName()
             + "\" is set to \"true\")"
         );
 
-        return new PartitionedMapTable(mapName, error);
+        return new ReplicatedMapTable(mapName, error);
     }
 
     private FieldsMetadata getFieldMetadata(Object key, Object value) {

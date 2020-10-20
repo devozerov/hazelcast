@@ -54,6 +54,7 @@ import com.hazelcast.sql.impl.plan.node.io.ReceivePlanNode;
 import com.hazelcast.sql.impl.plan.node.io.RootSendPlanNode;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
+import com.hazelcast.sql.impl.schema.map.ReplicatedMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rex.RexNode;
 
@@ -214,7 +215,8 @@ public class PlanCreateVisitor implements PhysicalRelVisitor {
             getScanFieldPaths(table),
             schemaBefore.getTypes(),
             hazelcastTable.getProjects(),
-            convertFilter(schemaBefore, hazelcastTable.getFilter())
+            convertFilter(schemaBefore, hazelcastTable.getFilter()),
+            table instanceof ReplicatedMapTable
         );
 
         pushUpstream(scanNode);

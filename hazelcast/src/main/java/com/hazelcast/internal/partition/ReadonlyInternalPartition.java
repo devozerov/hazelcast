@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.partition;
 
+import com.hazelcast.spi.impl.NodeEngine;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
@@ -57,5 +58,10 @@ public class ReadonlyInternalPartition extends AbstractInternalPartition {
     @Override
     protected PartitionReplica[] replicas() {
         return replicas;
+    }
+
+    @Override
+    public PartitionReplica getReplicaForReplicated(int replicaIndex, NodeEngine nodeEngine) {
+        throw new UnsupportedOperationException();
     }
 }

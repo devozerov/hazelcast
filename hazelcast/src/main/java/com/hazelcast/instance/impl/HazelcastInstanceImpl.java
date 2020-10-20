@@ -34,6 +34,7 @@ import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstance;
@@ -57,11 +58,13 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
+import com.hazelcast.replicatedmap.projectx.ReplicatedMapNew;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
@@ -277,7 +280,14 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     @Override
     public <K, V> ReplicatedMap<K, V> getReplicatedMap(@Nonnull String name) {
         checkNotNull(name, "Retrieving a replicated map instance with a null name is not allowed!");
-        return getDistributedObject(ReplicatedMapService.SERVICE_NAME, name);
+
+        MapConfig config = new MapConfig(name).setBackupCount(Integer.MAX_VALUE).setReadBackupData(true);
+
+        getConfig().addMapConfig(config);
+
+        MapProxyImpl<K, V> delegate = getDistributedObject(MapService.SERVICE_NAME, name);
+
+        return new ReplicatedMapNew(name, delegate);
     }
 
     @Override

@@ -282,6 +282,10 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
     @Override
     // Caution: Returning version array without copying for performance reasons. Callers must not modify this array!
     public long[] incrementPartitionReplicaVersions(int partitionId, ServiceNamespace namespace, int backupCount) {
+        if (backupCount == Integer.MAX_VALUE) {
+            return new long[0];
+        }
+
         PartitionReplicaVersions replicaVersion = replicaVersions[partitionId];
         return replicaVersion.incrementAndGet(namespace, backupCount);
     }

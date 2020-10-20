@@ -241,10 +241,17 @@ public class LocalMapStatsProvider {
             return;
         }
 
+        if (recordStore.getMapContainer().isReplicated()) {
+            return;
+        }
+
         long backupEntryCount = 0;
         long backupEntryMemoryCost = 0;
 
         int totalBackupCount = recordStore.getMapContainer().getTotalBackupCount();
+
+        if (totalBackupCount == Integer.MAX_VALUE)
+
         for (int replicaNumber = 1; replicaNumber <= totalBackupCount; replicaNumber++) {
             int partitionId = recordStore.getPartitionId();
             Address replicaAddress = getReplicaAddress(partitionId, replicaNumber, totalBackupCount);

@@ -18,18 +18,18 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
-import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.services.ServiceNamespaceAware;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.TargetAware;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 
@@ -83,7 +83,7 @@ final class OperationBackupHandler {
     int sendBackups0(BackupAwareOperation backupAwareOp) {
         int requestedSyncBackups = requestedSyncBackups(backupAwareOp);
         int requestedAsyncBackups = requestedAsyncBackups(backupAwareOp);
-        int requestedTotalBackups = requestedTotalBackups(backupAwareOp);
+        int requestedTotalBackups = requestedAsyncBackups != 0 ? requestedTotalBackups(backupAwareOp) : requestedSyncBackups;
         if (requestedTotalBackups == 0) {
             return 0;
         }
@@ -109,7 +109,9 @@ final class OperationBackupHandler {
             return 0;
         }
 
-        return makeBackups(backupAwareOp, op.getPartitionId(), replicaVersions, syncBackups, asyncBackups);
+        boolean replicated = requestedSyncBackups == Integer.MAX_VALUE;
+
+        return makeBackups(backupAwareOp, op.getPartitionId(), replicaVersions, syncBackups, asyncBackups, replicated);
     }
 
     int syncBackups(int requestedSyncBackups, int requestedAsyncBackups, boolean syncForced) {
@@ -119,6 +121,11 @@ final class OperationBackupHandler {
         }
 
         InternalPartitionService partitionService = node.getPartitionService();
+
+        if (requestedSyncBackups == Integer.MAX_VALUE) {
+            return partitionService.getMemberGroupsSize() - 1;
+        }
+
         int maxBackupCount = partitionService.getMaxAllowedBackupCount();
         return min(maxBackupCount, requestedSyncBackups);
     }
@@ -137,6 +144,10 @@ final class OperationBackupHandler {
 
     private int requestedSyncBackups(BackupAwareOperation op) {
         int backups = op.getSyncBackupCount();
+
+        if (backups == Integer.MAX_VALUE) {
+            return backups;
+        }
 
         if (backups < 0) {
             throw new IllegalArgumentException("Can't create backup for " + op
@@ -181,8 +192,14 @@ final class OperationBackupHandler {
         return backups;
     }
 
-    private int makeBackups(BackupAwareOperation backupAwareOp, int partitionId, long[] replicaVersions,
-                            int syncBackups, int asyncBackups) {
+    private int makeBackups(
+        BackupAwareOperation backupAwareOp,
+        int partitionId,
+        long[] replicaVersions,
+        int syncBackups,
+        int asyncBackups,
+        boolean replicated
+    ) {
         int sendSyncBackups;
         int totalBackups = syncBackups + asyncBackups;
 
@@ -190,21 +207,35 @@ final class OperationBackupHandler {
         InternalPartition partition = partitionService.getPartition(partitionId);
 
         if (totalBackups == 1) {
-            sendSyncBackups = sendSingleBackup(backupAwareOp, partition, replicaVersions, syncBackups);
+            sendSyncBackups = sendSingleBackup(
+                backupAwareOp,
+                partition,
+                replicaVersions,
+                syncBackups,
+                1,
+                replicated
+            );
         } else {
-            sendSyncBackups = sendMultipleBackups(backupAwareOp, partition, replicaVersions, syncBackups, totalBackups);
+            sendSyncBackups = sendMultipleBackups(
+                backupAwareOp,
+                partition,
+                replicaVersions,
+                syncBackups,
+                totalBackups,
+                replicated
+            );
         }
         return sendSyncBackups;
     }
 
-    private int sendSingleBackup(BackupAwareOperation backupAwareOp, InternalPartition partition,
-                                 long[] replicaVersions, int syncBackups) {
-        // Since there is only one replica, replica index is `1`
-        return sendSingleBackup(backupAwareOp, partition, replicaVersions, syncBackups, 1);
-    }
-
-    private int sendMultipleBackups(BackupAwareOperation backupAwareOp, InternalPartition partition,
-                                    long[] replicaVersions, int syncBackups, int totalBackups) {
+    private int sendMultipleBackups(
+        BackupAwareOperation backupAwareOp,
+        InternalPartition partition,
+        long[] replicaVersions,
+        int syncBackups,
+        int totalBackups,
+        boolean replicated
+    ) {
         int sendSyncBackups = 0;
         Operation backupOp = getBackupOperation(backupAwareOp);
         if (!(backupOp instanceof TargetAware)) {
@@ -212,7 +243,8 @@ final class OperationBackupHandler {
             Data backupOpData = nodeEngine.getSerializationService().toData(backupOp);
 
             for (int replicaIndex = 1; replicaIndex <= totalBackups; replicaIndex++) {
-                PartitionReplica target = partition.getReplica(replicaIndex);
+                PartitionReplica target =
+                    replicated ? partition.getReplicaForReplicated(replicaIndex, nodeEngine) : partition.getReplica(replicaIndex);
 
                 if (target == null) {
                     continue;
@@ -233,18 +265,34 @@ final class OperationBackupHandler {
             }
         } else {
             for (int replicaIndex = 1; replicaIndex <= totalBackups; replicaIndex++) {
-                int syncBackupSent = sendSingleBackup(backupAwareOp, partition, replicaVersions,
-                        syncBackups, replicaIndex);
+                int syncBackupSent = sendSingleBackup(
+                    backupAwareOp,
+                    partition,
+                    replicaVersions,
+                    syncBackups,
+                    replicaIndex,
+                    replicated
+                );
+
                 sendSyncBackups += syncBackupSent;
             }
         }
         return sendSyncBackups;
     }
 
-    private int sendSingleBackup(BackupAwareOperation backupAwareOp, InternalPartition partition,
-                                 long[] replicaVersions, int syncBackups, int replica) {
+    private int sendSingleBackup(
+        BackupAwareOperation backupAwareOp,
+        InternalPartition partition,
+        long[] replicaVersions,
+        int syncBackups,
+        int replica,
+        boolean replicated
+    ) {
         Operation backupOp = getBackupOperation(backupAwareOp);
-        PartitionReplica target = partition.getReplica(replica);
+
+        PartitionReplica target =
+            replicated ? partition.getReplicaForReplicated(replica, nodeEngine) : partition.getReplica(replica);
+
         if (target != null) {
             if (skipSendingBackupToTarget(partition, target)) {
                 return 0;

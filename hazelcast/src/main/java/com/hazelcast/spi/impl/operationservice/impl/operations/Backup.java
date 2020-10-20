@@ -127,7 +127,9 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
         }
 
         InternalPartition partition = partitionService.getPartition(partitionId);
-        PartitionReplica owner = partition.getReplica(getReplicaIndex());
+        PartitionReplica owner = isReplicated()
+            ? partition.getReplicaForReplicated(getReplicaIndex(), nodeEngine) : partition.getReplica(getReplicaIndex());
+
         if (owner == null || !owner.isIdentical(nodeEngine.getLocalMember())) {
             validationFailure = new IllegalStateException("Wrong target! " + toString()
                     + " cannot be processed! Target should be: " + owner);
@@ -136,8 +138,13 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
             }
             return;
         }
-        if (versionManager.isPartitionReplicaVersionStale(getPartitionId(), namespace,
-                replicaVersions, getReplicaIndex())) {
+
+        // TODO: How to handle stale backups here?
+        if (isReplicated()) {
+            return;
+        }
+
+        if (versionManager.isPartitionReplicaVersionStale(getPartitionId(), namespace, replicaVersions, getReplicaIndex())) {
             validationFailure = new IllegalStateException("Ignoring stale backup with namespace: " + namespace
                     + ", versions: " + Arrays.toString(replicaVersions));
             if (logger.isFineEnabled()) {
@@ -146,8 +153,11 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
                         + ", Current-versions: " + Arrays.toString(currentVersions)
                         + ", Backup-versions: " + Arrays.toString(replicaVersions));
             }
-            return;
         }
+    }
+
+    private boolean isReplicated() {
+        return replicaVersions.length == 0;
     }
 
     private void ensureBackupOperationInitialized() {
@@ -172,6 +182,11 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
 
         ensureBackupOperationInitialized();
         runDirect(backupOp);
+
+        // TODO: How to handle stale backups?
+        if (isReplicated()) {
+            return;
+        }
 
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         PartitionReplicaVersionManager versionManager = nodeEngine.getPartitionService().getPartitionReplicaVersionManager();
@@ -299,8 +314,8 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
             originalCaller.readData(in);
         }
 
-        replicaVersions = new long[MAX_BACKUP_COUNT];
         byte replicaVersionCount = in.readByte();
+        replicaVersions = replicaVersionCount == 0 ? new long[0] : new long[MAX_BACKUP_COUNT];
         for (int k = 0; k < replicaVersionCount; k++) {
             replicaVersions[k] = in.readLong();
         }

@@ -16,11 +16,20 @@
 
 package com.hazelcast.internal.partition.impl;
 
+import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.internal.partition.AbstractInternalPartition;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionReplicaInterceptor;
+import com.hazelcast.spi.impl.NodeEngine;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.TreeMap;
+import java.util.UUID;
 
 import static java.util.Arrays.copyOf;
 
@@ -90,6 +99,41 @@ public class InternalPartitionImpl extends AbstractInternalPartition implements 
     @Override
     public PartitionReplica getReplica(int replicaIndex) {
         return replicas[replicaIndex];
+    }
+
+    @Override
+    public PartitionReplica getReplicaForReplicated(int replicaIndex, NodeEngine nodeEngine) {
+        if (replicaIndex == 0) {
+            return replicas[0];
+        } else {
+            PartitionReplica primaryReplica = replicas[0];
+
+            if (primaryReplica == null) {
+                return null;
+            }
+
+            Collection<Member> members = nodeEngine.getClusterService().getMembers(MemberSelectors.DATA_MEMBER_SELECTOR);
+
+            TreeMap<UUID, PartitionReplica> replicaMap = new TreeMap<>();
+
+            for (Member member : members) {
+                if (member.getUuid().equals(primaryReplica.uuid())) {
+                    continue;
+                }
+
+                replicaMap.put(member.getUuid(), new PartitionReplica(member.getAddress(), member.getUuid()));
+            }
+
+            List<PartitionReplica> replicas = new ArrayList<>(replicaMap.values());
+
+            int adjustedReplicaIndex = replicaIndex - 1;
+
+            if (replicas.size() <= adjustedReplicaIndex) {
+                return null;
+            } else {
+                return replicas.get(adjustedReplicaIndex);
+            }
+        }
     }
 
     /** Swaps the replicas for {@code index1} and {@code index2} and call the partition listeners */

@@ -309,6 +309,10 @@ public class MapContainer {
         return isWanReplicationEnabled() && mapConfig.getWanReplicationRef().isRepublishingEnabled();
     }
 
+    public boolean isReplicated() {
+        return mapConfig.getBackupCount() == Integer.MAX_VALUE;
+    }
+
     public int getTotalBackupCount() {
         return getBackupCount() + getAsyncBackupCount();
     }

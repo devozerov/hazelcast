@@ -279,11 +279,6 @@ public abstract class Operation implements DataSerializable {
     }
 
     public final Operation setReplicaIndex(int replicaIndex) {
-        if (replicaIndex < 0 || replicaIndex >= InternalPartition.MAX_REPLICA_COUNT) {
-            throw new IllegalArgumentException("Replica index is out of range [0-"
-                    + (InternalPartition.MAX_REPLICA_COUNT - 1) + "]: " + replicaIndex);
-        }
-
         setFlag(replicaIndex != 0, BITMASK_REPLICA_INDEX_SET);
         this.replicaIndex = replicaIndex;
         return this;

@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.partition;
 
+import com.hazelcast.spi.impl.NodeEngine;
+
 import java.util.stream.IntStream;
 
 public interface InternalPartition extends IPartition {
@@ -55,6 +57,8 @@ public interface InternalPartition extends IPartition {
      * @throws ArrayIndexOutOfBoundsException when replica index is out of bounds
      */
     PartitionReplica getReplica(int replicaIndex);
+
+    PartitionReplica getReplicaForReplicated(int replicaIndex, NodeEngine nodeEngine);
 
     /**
      * Returns the copy of replicas assigned to this partition.

@@ -215,6 +215,8 @@ abstract class MapProxySupport<K, V>
     private final int putAllBatchSize;
     private final float putAllInitialSizeFactor;
 
+    private final boolean replicated;
+
     protected MapProxySupport(String name, MapService service, NodeEngine nodeEngine, MapConfig mapConfig) {
         super(nodeEngine, service);
         this.name = name;
@@ -237,6 +239,8 @@ abstract class MapProxySupport<K, V>
 
         this.putAllBatchSize = properties.getInteger(MAP_PUT_ALL_BATCH_SIZE);
         this.putAllInitialSizeFactor = properties.getFloat(MAP_PUT_ALL_INITIAL_SIZE_FACTOR);
+
+        this.replicated = mapConfig.getBackupCount() == Integer.MAX_VALUE;
     }
 
     @Override
@@ -369,7 +373,8 @@ abstract class MapProxySupport<K, V>
     private Data readBackupDataOrNull(Data key) {
         int partitionId = partitionService.getPartitionId(key);
         IPartition partition = partitionService.getPartition(partitionId, false);
-        if (!partition.isOwnerOrBackup(thisAddress)) {
+
+        if (!replicated && !partition.isOwnerOrBackup(thisAddress)) {
             return null;
         }
         PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);

@@ -78,19 +78,14 @@ public class SqlReplicatedMapTest extends SqlTestSupport {
 
         rmap1.put(1, 1);
         rmap1.put(2, 2);
-
-        assertEquals(Integer.valueOf(1), rmap1.get(1));
-        assertEquals(Integer.valueOf(2), rmap1.get(2));
-
-        assertEquals(Integer.valueOf(1), rmap2.get(1));
-        assertEquals(Integer.valueOf(2), rmap2.get(2));
+        rmap1.put(3, 3);
 
         checkSql(member1);
         checkSql(member2);
     }
 
     private static void checkSql(HazelcastInstance member) {
-        try (SqlResult result = member.getSql().execute("SELECT * FROM replicated.map")) {
+        try (SqlResult result = member.getSql().execute("SELECT * FROM replicated.map WHERE this < 3")) {
             Map<Integer, Integer> resMap = new HashMap<>();
 
             for (SqlRow row : result) {

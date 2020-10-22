@@ -666,10 +666,14 @@
                             <trimStackTrace>false</trimStackTrace>
                             <testFailureIgnore>true</testFailureIgnore>
                             <includes>
-                                <!-- TODO: Limited to two classes only for testing, rollback -->
-                                <include>**/QueryFragmentExecutableTest.java</include>
-                                <include>**/AbsFunctionTest.java</include>
-                                <include>**/HazelcastSchemaUtilsTest.java</include>
+                                <include>**/*.java</include>
+
+                                <!-- TODO: Enable for debug, remove for final PR -->
+                                <!--
+                                    <include>**/QueryFragmentExecutableTest.java</include>
+                                    <include>**/AbsFunctionTest.java</include>
+                                    <include>**/HazelcastSchemaUtilsTest.java</include>
+                                -->
                             </includes>
                             <excludes>
                                 <exclude>**/**IT.java</exclude>

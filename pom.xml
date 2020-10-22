@@ -648,7 +648,12 @@
                                     <goal>prepare-agent</goal>
                                 </goals>
                             </execution>
-                            <!-- TODO: Return the "report" goal and possibly disable it for the "core" module? -->
+                            <execution>
+                                <id>report</id>
+                                <goals>
+                                    <goal>report</goal>
+                                </goals>
+                            </execution>
                         </executions>
                     </plugin>
 
@@ -662,8 +667,9 @@
                             <testFailureIgnore>true</testFailureIgnore>
                             <includes>
                                 <!-- TODO: Limited to two classes only for testing, rollback -->
-                                <include>**/QueryIdTest.java</include>
+                                <include>**/QueryFragmentExecutableTest.java</include>
                                 <include>**/AbsFunctionTest.java</include>
+                                <include>**/HazelcastSchemaUtilsTest.java</include>
                             </includes>
                             <excludes>
                                 <exclude>**/**IT.java</exclude>
